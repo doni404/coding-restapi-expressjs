@@ -13,11 +13,12 @@ export function authenticateTokenAdmin(req, res, next) {
         return res.status(401).send(responseWithoutData('error', 'Unauthorized'))
     }
 
-    jwt.verify(token, process.env.SECRET_KEY_CMS, (err, user) => {
-        if (err) {
-            return res.status(403).send(responseWithoutData('error', 'Forbidden'))
-        }
-        req.user = user;
+    try {
+        const decodedToken = jwt.verify(token, process.env.JWT_SECRET_CMS);
+        req.decoded = decodedToken;
         next();
-    });
+    } catch (error) {
+        return res.status(403).send(responseWithoutData('error', 'Forbidden'))
+    }
+
 }
