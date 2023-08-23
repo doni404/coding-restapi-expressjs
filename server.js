@@ -1,7 +1,8 @@
 import dotenv from 'dotenv'
 import app from './src/app.js'
 
-dotenv.config()
+// Load environment variables from .env
+dotenv.config({ path: './.env' });
 
 const port = process.env.APP_PORT
 
