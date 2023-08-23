@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import { response, responseWithoutData } from '../utils/helper_response.js';
+import { getPaginationParams } from '../utils/helper_query.js';
 
 dotenv.config();
 
@@ -37,17 +38,196 @@ export async function login(req, res) {
             const expiresIn = '2h'; // Token expiration time (e.g., 1 hour)
 
             // Generate and send JWT token
-            const accessToken = jwt.sign({ id: admin.id, username: admin.name }, process.env.SECRET_KEY_CMS, { expiresIn });
+            const accessToken = jwt.sign({ id: admin.id, email: admin.email }, process.env.JWT_SECRET_CMS, { expiresIn });
 
             admin = {
                 ...admin,
                 token: accessToken
             }
 
-            return res.send(response("success", "Successfully logged in", admin));
+            return res.status(200).send(response("success", "Successfully logged in", admin));
         });
     } catch (error) {
         return res.status(500).send(responseWithoutData('error', 'something error'));
     }
 }
 
+export async function createAdmin(req, res) {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+        return res.status(400).send(responseWithoutData('error', 'Invalid request body'));
+    }
+
+    try {
+        // Check data with the email is exist or not
+        let checkData = await model.findByEmailActive(db, email);
+
+        if (checkData.length !== 0) {
+            return res.status(409).send(responseWithoutData('error', 'Email is exist'))
+        }
+
+        // Create test admin data
+        const passwordEncrypt = bcrypt.hashSync(req.body.password, parseInt(process.env.SALTROUNDS));
+        req.body.password = passwordEncrypt;
+
+        const registerDate = new Date();
+
+        // Get the admin id who delete this from token extraction
+        // Path /create-test will set admin id null
+        let adminWhoCreate = null;
+        if (req.path === "/") {
+            adminWhoCreate = req.decoded.id;
+        }
+
+        let data = {
+            ...req.body,
+            admin_created_id: adminWhoCreate,
+            created_at: registerDate,
+            admin_updated_id: adminWhoCreate,
+            updated_at: registerDate
+        }
+
+        let createdData = await model.createAdmin(db, data);
+
+        return res.status(201).send(response('success', 'Admin successfully created!', createdData[0]));
+    } catch (error) {
+        return res.status(500).send(responseWithoutData('error', 'something error'));
+    }
+}
+
+export async function getAdmins(req, res) {
+    // Parse pagination params using the helper function
+    const { limit, offset, sort } = getPaginationParams(req.query);
+
+    try {
+        // Get all admins
+        let admins = await model.findAll(db, { limit, offset, sort });
+
+        let totalAdmins = (await model.findTotalCount(db))[0].total;
+
+        let data = {
+            items: admins,
+            pagination: {
+                totalItems: totalAdmins,
+                currentPage: Math.floor(offset / limit) + 1,
+                itemsPerPage: limit,
+                totalPages: Math.ceil(totalAdmins / limit)
+            }
+        }
+
+        return res.status(200).send(response('success', 'Successfully get all admins', data));
+    } catch (error) {
+        console.log(error);
+        return res.status(500).send(responseWithoutData('error', 'something error'));
+    }
+}
+
+export async function getAdmin(req, res) {
+    const id = req.params.adminId;
+
+    try {
+        // Get the admin by Id
+        let admin = await model.findById(db, id);
+
+        if (admin.length === 0) {
+            return res.status(404).send(responseWithoutData('error', 'Admin not found!'));
+        }
+
+        return res.status(200).send(response('success', 'Successfully get admin', admin[0]));
+    } catch (error) {
+        console.log(error);
+        return res.status(500).send(responseWithoutData('error', 'something error'));
+    }
+}
+
+export async function updateAdmin(req, res) {
+    const id = req.params.adminId;
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+        return res.status(400).send(responseWithoutData('error', 'Invalid request body'));
+    }
+
+    try {
+        // Check the admin exist or not
+        let checkAdmin = await model.findById(db, id);
+
+        if (checkAdmin.length === 0) {
+            return res.status(404).send(responseWithoutData('error', 'Admin not found!'));
+        }
+
+        // Check data with the email is exist or not
+        let checkEmailExist = await model.findByEmailActive(db, email);
+
+        if (checkEmailExist.length > 0) {
+            if (Number(checkEmailExist[0].id) !== Number(id)) {
+                return res.status(409).send(responseWithoutData('error', 'Email is exist'))
+            }
+        }
+
+        // Create test admin data
+        const passwordEncrypt = bcrypt.hashSync(req.body.password, parseInt(process.env.SALTROUNDS));
+        req.body.password = passwordEncrypt;
+
+        // Get the admin id who update this from token extraction
+        let adminWhoUpdate = req.decoded.id;
+
+        let data = {
+            id,
+            ...req.body,
+            admin_updated_id: adminWhoUpdate,
+            updated_at: new Date(),
+        }
+
+        let updatedAdmin = await model.updateAdmin(db, data);
+        return res.status(200).send(response('sucess', 'Admin successfully updated !', updatedAdmin[0]));
+    } catch (error) {
+        return res.status(500).send(responseWithoutData('error', 'something error'));
+    }
+}
+
+export async function deleteAdmin(req, res) {
+    const id = req.params.adminId;
+
+    try {
+        // Check the admin exist or not
+        let checkAdmin = await model.findById(db, id);
+
+        if (checkAdmin.length === 0) {
+            return res.status(404).send(responseWithoutData('error', 'Admin not found!'));
+        }
+
+        // Get the admin id who delete this from token extraction
+        let adminWhoDelete = req.decoded.id;
+
+        let data = {
+            id,
+            situation: 'inactive',
+            admin_deleted_id: adminWhoDelete,
+            deleted_at: new Date(),
+        }
+
+        let deletedAdmin = await model.deleteAdmin(db, data);
+        return res.status(200).send(response('sucess', 'Admin successfully deleted !', deletedAdmin[0]));
+    } catch (error) {
+        return res.status(500).send(responseWithoutData('error', 'something error'));
+    }
+}
+
+export async function deleteAdminPermanent(req, res) {
+    const id = req.params.adminId;
+
+    try {
+        let checkAdmin = await model.findDeletedById(db, id);
+
+        if (checkAdmin.length === 0) {
+            return res.status(404).send(responseWithoutData('error', 'Admin can\'t be deleted permanently!'));
+        }
+
+        await model.deleteAdminPermanent(db, id);
+        return res.status(200).send(responseWithoutData('success', 'Admin deleted permanently!'));
+    } catch (error) {
+        return res.status(500).send(responseWithoutData('error', 'something error'));
+    }
+}
