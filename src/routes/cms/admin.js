@@ -13,4 +13,7 @@ router.put('/:adminId', authenticateTokenAdmin, controller.updateAdmin);
 router.delete('/:adminId', authenticateTokenAdmin, controller.deleteAdmin);
 router.delete('/:adminId/permanent', authenticateTokenAdmin, controller.deleteAdminPermanent);
 
+router.post('/forgot-password', controller.forgotPassword);
+router.patch('/reset-password/:resetToken', controller.resetPassword);
+
 export default router;
