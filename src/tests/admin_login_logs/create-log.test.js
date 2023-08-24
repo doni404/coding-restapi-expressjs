@@ -4,8 +4,9 @@ import dotenv from 'dotenv';
 
 // Load environment variables from .env.test
 dotenv.config({ path: './.env.test' });
+const testKey = "create-log";
 
-describe('/admin reset password endpoint', () => {
+describe('/admin create endpoint', () => {
     let createdAdmin;
     let jwtToken;
 
@@ -15,7 +16,7 @@ describe('/admin reset password endpoint', () => {
             .post(`/v1/cms/admins/create-test`)
             .send({
                 name: process.env.TEST_ADMIN_NAME,
-                email: process.env.TEST_ADMIN_EMAIL,
+                email: testKey + process.env.TEST_ADMIN_EMAIL,
                 password: process.env.TEST_ADMIN_PASSWORD
             });
 
@@ -26,7 +27,7 @@ describe('/admin reset password endpoint', () => {
         const responseLogin = await request(app)
             .post('/v1/cms/admins/login')
             .send({
-                email: process.env.TEST_ADMIN_EMAIL,
+                email: testKey + process.env.TEST_ADMIN_EMAIL,
                 password: process.env.TEST_ADMIN_PASSWORD
             });
 
@@ -63,30 +64,60 @@ describe('/admin reset password endpoint', () => {
         }
     }
 
-    it('should reset the admin password with the new one', async() => {
+    it('should create admin login logs with the valid data', async() => {
         const response = await request(app)
-        .patch('/v1/cms/admins/reset-password/' + jwtToken)
+        .post('/v1/cms/admin-login-logs')
+        .set('Authorization', `Bearer ${jwtToken}`)
         .send({
-             password: process.env.TEST_ADMIN_PASSWORD + "x"
+            admin_id: createdAdmin.id,
+            ip_address: "182.0.169.100",
+            platform: "pc", 
+            browser: "safari", 
+            os: "Mac OS", 
+            city: "Somewhere"
         });
 
-        expect(response.status).toBe(200);
+        expect(response.status).toBe(201);
+        expect(response.body).toHaveProperty('data');
     });
 
-    it('should return an error when token is invalid', async() => {
+    it('should return an error when no authorization header', async() => {
         const response = await request(app)
-        .patch('/v1/cms/admins/reset-password/' + jwtToken + "x")
+        .post('/v1/cms/admin-login-logs')
         .send({
-             password: process.env.TEST_ADMIN_PASSWORD + "x"
+            admin_id: createdAdmin.id,
+            ip_address: "182.0.169.100",
+            platform: "pc", 
+            browser: "safari", 
+            os: "Mac OS", 
+            city: "Somewhere"
+        });
+
+        expect(response.status).toBe(401);
+        expect(response.body).toHaveProperty('code', 'error');
+    });
+
+    it('should return an error with wrong or invalid authorization token', async () => {
+        const response = await request(app)
+        .post('/v1/cms/admin-login-logs')
+        .set('Authorization', `Bearer ${jwtToken + "x"}`)
+        .send({
+            admin_id: createdAdmin.id,
+            ip_address: "182.0.169.100",
+            platform: "pc", 
+            browser: "safari", 
+            os: "Mac OS", 
+            city: "Somewhere"
         });
 
         expect(response.status).toBe(403);
         expect(response.body).toHaveProperty('code', 'error');
     });
 
-    it('should return an error no password in body', async() => {
+    it('should return an error with missing required fields', async () => {
         const response = await request(app)
-        .patch('/v1/cms/admins/reset-password/' + jwtToken)
+        .post('/v1/cms/admin-login-logs')
+        .set('Authorization', `Bearer ${jwtToken}`)
         .send({});
 
         expect(response.status).toBe(400);

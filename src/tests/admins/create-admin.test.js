@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 
 // Load environment variables from .env.test
 dotenv.config({ path: './.env.test' });
+const testKey = "create-admin";
 
 describe('/admin create endpoint', () => {
     let createdAdmin;
@@ -15,7 +16,7 @@ describe('/admin create endpoint', () => {
             .post(`/v1/cms/admins/create-test`)
             .send({
                 name: process.env.TEST_ADMIN_NAME,
-                email: process.env.TEST_ADMIN_EMAIL,
+                email: testKey + process.env.TEST_ADMIN_EMAIL,
                 password: process.env.TEST_ADMIN_PASSWORD
             });
 
@@ -26,7 +27,7 @@ describe('/admin create endpoint', () => {
         const responseLogin = await request(app)
             .post('/v1/cms/admins/login')
             .send({
-                email: process.env.TEST_ADMIN_EMAIL,
+                email: testKey + process.env.TEST_ADMIN_EMAIL,
                 password: process.env.TEST_ADMIN_PASSWORD
             });
 
@@ -69,7 +70,7 @@ describe('/admin create endpoint', () => {
             .set('Authorization', `Bearer ${jwtToken}`)
             .send({
                 name: process.env.TEST_ADMIN_NAME,
-                email: "1" + process.env.TEST_ADMIN_EMAIL,
+                email: testKey + "1" + process.env.TEST_ADMIN_EMAIL,
                 password: process.env.TEST_ADMIN_PASSWORD,
                 gender: "male",
                 notification_email: "yes",
@@ -92,7 +93,7 @@ describe('/admin create endpoint', () => {
             .set('Authorization', `Bearer ${jwtToken}`)
             .send({
                 name: process.env.TEST_ADMIN_NAME,
-                email: process.env.TEST_ADMIN_EMAIL,
+                email: testKey + process.env.TEST_ADMIN_EMAIL,
                 password: process.env.TEST_ADMIN_PASSWORD,
                 gender: "male",
                 notification_email: "yes",
@@ -120,7 +121,7 @@ describe('/admin create endpoint', () => {
             .post('/v1/cms/admins')
             .send({
                 name: process.env.TEST_ADMIN_NAME,
-                email: "1" + process.env.TEST_ADMIN_EMAIL,
+                email: testKey + "1" + process.env.TEST_ADMIN_EMAIL,
                 password: process.env.TEST_ADMIN_PASSWORD,
                 gender: "male",
                 notification_email: "yes",
@@ -139,7 +140,7 @@ describe('/admin create endpoint', () => {
             .set('Authorization', `Bearer ${jwtToken+"x"}`)
             .send({
                 name: process.env.TEST_ADMIN_NAME,
-                email: "1" + process.env.TEST_ADMIN_EMAIL,
+                email: testKey + "1" + process.env.TEST_ADMIN_EMAIL,
                 password: process.env.TEST_ADMIN_PASSWORD,
                 gender: "male",
                 notification_email: "yes",

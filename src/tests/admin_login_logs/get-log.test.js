@@ -4,8 +4,9 @@ import dotenv from 'dotenv';
 
 // Load environment variables from .env.test
 dotenv.config({ path: './.env.test' });
+const testKey = "get-log";
 
-describe('/admin delete endpoint', () => {
+describe('/admin create endpoint', () => {
     let createdAdmin;
     let jwtToken;
 
@@ -15,7 +16,7 @@ describe('/admin delete endpoint', () => {
             .post(`/v1/cms/admins/create-test`)
             .send({
                 name: process.env.TEST_ADMIN_NAME,
-                email: process.env.TEST_ADMIN_EMAIL,
+                email: testKey + process.env.TEST_ADMIN_EMAIL,
                 password: process.env.TEST_ADMIN_PASSWORD
             });
 
@@ -26,7 +27,7 @@ describe('/admin delete endpoint', () => {
         const responseLogin = await request(app)
             .post('/v1/cms/admins/login')
             .send({
-                email: process.env.TEST_ADMIN_EMAIL,
+                email: testKey + process.env.TEST_ADMIN_EMAIL,
                 password: process.env.TEST_ADMIN_PASSWORD
             });
 
@@ -41,7 +42,9 @@ describe('/admin delete endpoint', () => {
     });
 
     afterAll(async () => {
-        // not need delete after all because data already deleted within case.
+        // Clean up resources, close connections, etc.
+        // For example, you can delete the created admin user
+        await deleteAdmin(createdAdmin);
     });
 
     async function deleteAdmin(admin) {
@@ -61,71 +64,47 @@ describe('/admin delete endpoint', () => {
         }
     }
 
-    it('should soft delete admin with the valid data', async () => {
+    it('should get admin logs by admin id with the valid data', async() => {
         const response = await request(app)
-            .delete('/v1/cms/admins/' + createdAdmin.id)
-            .set('Authorization', `Bearer ${jwtToken}`);
-
+        .get('/v1/cms/admin-login-logs/admins/' + createdAdmin.id)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        
         expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty('data');
     });
 
-    it('should return an error when no data exist to delete or already deleted', async () => {
+    it('should return empty array in data when no data exist', async() => {
         const response = await request(app)
-            .delete('/v1/cms/admins/0')
-            .set('Authorization', `Bearer ${jwtToken}`);
+        .get('/v1/cms/admin-login-logs/admins/0')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty('data', []);
+    });
 
+    it('should return an error when no params id in url', async() => {
+        const response = await request(app)
+        .get('/v1/cms/admin-login-logs/admins/')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        
         expect(response.status).toBe(404);
         expect(response.body).toHaveProperty('code', 'error');
-
-        const responseDeleted = await request(app)
-        .delete('/v1/cms/admins/' + createdAdmin.id)
-        .set('Authorization', `Bearer ${jwtToken}`);
-
-        expect(responseDeleted.status).toBe(404);
-        expect(responseDeleted.body).toHaveProperty('code', 'error');
     });
 
-    it('should return an error when no id in param', async () => {
+    it('should return an error when no authorization header', async() => {
         const response = await request(app)
-            .delete('/v1/cms/admins/')
-            .set('Authorization', `Bearer ${jwtToken}`);
-
-        expect(response.status).toBe(404);
-        expect(response.body).toHaveProperty('code', 'error');
-        expect(response.body).toHaveProperty('message', 'Invalid endpoint url');
-    });
-
-    it('should return an error when no authorization header', async () => {
-        const response = await request(app)
-            .delete('/v1/cms/admins/' + createdAdmin.id);
-
+        .get('/v1/cms/admin-login-logs/admins/0')
+        
         expect(response.status).toBe(401);
         expect(response.body).toHaveProperty('code', 'error');
     });
 
     it('should return an error with wrong or invalid authorization token', async () => {
         const response = await request(app)
-            .delete('/v1/cms/admins/' + createdAdmin.id)
-            .set('Authorization', `Bearer ${jwtToken + "x"}`);
-
+        .get('/v1/cms/admin-login-logs/admins/0')
+        .set('Authorization', `Bearer ${jwtToken + "x"}`)
+        
         expect(response.status).toBe(403);
-        expect(response.body).toHaveProperty('code', 'error');
-    });
-
-    it('should delete admin permanently', async() => {
-        const response = await request(app)
-            .delete('/v1/cms/admins/' + createdAdmin.id + '/permanent')
-            .set('Authorization', `Bearer ${jwtToken}`);
-
-        expect(response.status).toBe(200);
-    });
-
-    it('should return an error when delete admin permanently but not exist', async() => {
-        const response = await request(app)
-            .delete('/v1/cms/admins/0/permanent')
-            .set('Authorization', `Bearer ${jwtToken}`);
-
-        expect(response.status).toBe(404);
         expect(response.body).toHaveProperty('code', 'error');
     });
 });
