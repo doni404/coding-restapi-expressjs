@@ -82,13 +82,13 @@ function getFooter() {
 	<table border='0' cellspacing='0' cellpadding='0' style='margin: 16px auto 12px; text-align: center; width: 100%'
 	<tr>
 	<td style='text-align: right; width: calc(50% - 63px)'>
-	<a href='https://www.instagram.com/coconutpudding.official' target='_blank'><img src='https://dev-cms.art-with.me/images/sns-fb-gray.png' alt='facebook' style='width: 30px;opacity: 0.65;' /></a>
+	<a href='https://www.instagram.com/coconutpudding.official' target='_blank'><img src='${baseURLAPI}/v1/public/resources/img/sns-fb-gray.png' alt='facebook' style='width: 30px;opacity: 0.65;' /></a>
 	</td> 
 	<td style='text-align: center; width: 63px'>
 	<a href='https://www.instagram.com/coconutpudding.official' target='_blank'><img src='${baseURLAPI}/v1/public/resources/img/sns-ig-gray.png' alt='instagram' style='width: 30px;opacity: 0.65;' /></a>
 	</td>
 	<td style='text-align: left; width: calc(50% - 63px)'>
-	<a href='https://www.instagram.com/coconutpudding.official' target='_blank'><img src='https://dev-cms.art-with.me/images/sns-tw-gray.png' alt='twitter' style='width: 30px;opacity: 0.65;' /></a>
+	<a href='https://www.instagram.com/coconutpudding.official' target='_blank'><img src='${baseURLAPI}/v1/public/resources/img/sns-tw-gray.png' alt='twitter' style='width: 30px;opacity: 0.65;' /></a>
 	</td>
     </tr>
 	</table>
