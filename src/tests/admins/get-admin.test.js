@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 
 // Load environment variables from .env.test
 dotenv.config({ path: './.env.test' });
+const testKey = "get-admin";
 
 describe('/admin get list and by id endpoint', () => {
     let createdAdmin;
@@ -15,7 +16,7 @@ describe('/admin get list and by id endpoint', () => {
             .post(`/v1/cms/admins/create-test`)
             .send({
                 name: process.env.TEST_ADMIN_NAME,
-                email: process.env.TEST_ADMIN_EMAIL,
+                email: testKey + process.env.TEST_ADMIN_EMAIL,
                 password: process.env.TEST_ADMIN_PASSWORD
             });
 
@@ -26,7 +27,7 @@ describe('/admin get list and by id endpoint', () => {
         const responseLogin = await request(app)
             .post('/v1/cms/admins/login')
             .send({
-                email: process.env.TEST_ADMIN_EMAIL,
+                email: testKey + process.env.TEST_ADMIN_EMAIL,
                 password: process.env.TEST_ADMIN_PASSWORD
             });
 
@@ -132,7 +133,7 @@ describe('/admin get list and by id endpoint', () => {
             .set('Authorization', `Bearer ${jwtToken}`)
             .send({
                 name: process.env.TEST_ADMIN_NAME,
-                email: "2" + process.env.TEST_ADMIN_EMAIL,
+                email: testKey + "2" + process.env.TEST_ADMIN_EMAIL,
                 password: process.env.TEST_ADMIN_PASSWORD
             });
 

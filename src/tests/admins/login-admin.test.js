@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 
 // Load environment variables from .env.test
 dotenv.config({ path: './.env.test' });
+const testKey = "login-admin";
 
 describe('/admin login endpoint', () => {
     let createdAdmin;
@@ -15,7 +16,7 @@ describe('/admin login endpoint', () => {
             .post(`/v1/cms/admins/create-test`)
             .send({
                 name: process.env.TEST_ADMIN_NAME,
-                email: process.env.TEST_ADMIN_EMAIL,
+                email: testKey + process.env.TEST_ADMIN_EMAIL,
                 password: process.env.TEST_ADMIN_PASSWORD
             });
 
@@ -27,8 +28,6 @@ describe('/admin login endpoint', () => {
         // Clean up resources, close connections, etc.
         // For example, you can delete the created admin user
         if (createdAdmin) {
-            console.log("after all");
-
             // Delete admin user for testing
             const responseDelete = await request(app)
                 .delete(`/v1/cms/admins/${createdAdmin.id}`)
@@ -48,7 +47,7 @@ describe('/admin login endpoint', () => {
         const response = await request(app)
             .post('/v1/cms/admins/login')
             .send({
-                email: process.env.TEST_ADMIN_EMAIL,
+                email: testKey + process.env.TEST_ADMIN_EMAIL,
                 password: process.env.TEST_ADMIN_PASSWORD
             });
 
@@ -78,7 +77,7 @@ describe('/admin login endpoint', () => {
         const response = await request(app)
             .post('/v1/cms/admins/login')
             .send({
-                email: process.env.TEST_ADMIN_EMAIL,
+                email: testKey + process.env.TEST_ADMIN_EMAIL,
                 password: 'incorrectpassword'
             });
 

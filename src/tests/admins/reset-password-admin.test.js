@@ -4,8 +4,9 @@ import dotenv from 'dotenv';
 
 // Load environment variables from .env.test
 dotenv.config({ path: './.env.test' });
+const testKey = "reset-password";
 
-describe('/admin forgot password endpoint', () => {
+describe('/admin reset password endpoint', () => {
     let createdAdmin;
     let jwtToken;
 
@@ -15,7 +16,7 @@ describe('/admin forgot password endpoint', () => {
             .post(`/v1/cms/admins/create-test`)
             .send({
                 name: process.env.TEST_ADMIN_NAME,
-                email: process.env.TEST_ADMIN_EMAIL,
+                email: testKey + process.env.TEST_ADMIN_EMAIL,
                 password: process.env.TEST_ADMIN_PASSWORD
             });
 
@@ -26,7 +27,7 @@ describe('/admin forgot password endpoint', () => {
         const responseLogin = await request(app)
             .post('/v1/cms/admins/login')
             .send({
-                email: process.env.TEST_ADMIN_EMAIL,
+                email: testKey + process.env.TEST_ADMIN_EMAIL,
                 password: process.env.TEST_ADMIN_PASSWORD
             });
 
@@ -63,34 +64,33 @@ describe('/admin forgot password endpoint', () => {
         }
     }
 
-    it('should send forgot email to the admin email', async() => {
+    it('should reset the admin password with the new one', async() => {
         const response = await request(app)
-        .post('/v1/cms/admins/forgot-password')
+        .patch('/v1/cms/admins/reset-password/' + jwtToken)
         .send({
-            email: process.env.TEST_ADMIN_EMAIL
+             password: process.env.TEST_ADMIN_PASSWORD + "x"
         });
 
         expect(response.status).toBe(200);
     });
 
-    it('should return an error when user with the email doesn\'t exist', async() => {
+    it('should return an error when token is invalid', async() => {
         const response = await request(app)
-        .post('/v1/cms/admins/forgot-password')
+        .patch('/v1/cms/admins/reset-password/' + jwtToken + "x")
         .send({
-            email: "xxx" + process.env.TEST_ADMIN_EMAIL
+             password: process.env.TEST_ADMIN_PASSWORD + "x"
         });
 
-        expect(response.status).toBe(404);
+        expect(response.status).toBe(403);
         expect(response.body).toHaveProperty('code', 'error');
     });
 
-    it('should return an error no email in body', async() => {
+    it('should return an error no password in body', async() => {
         const response = await request(app)
-        .post('/v1/cms/admins/forgot-password')
+        .patch('/v1/cms/admins/reset-password/' + jwtToken)
         .send({});
 
         expect(response.status).toBe(400);
         expect(response.body).toHaveProperty('code', 'error');
     });
-
 });

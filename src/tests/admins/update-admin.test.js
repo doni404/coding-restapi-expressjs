@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 
 // Load environment variables from .env.test
 dotenv.config({ path: './.env.test' });
+const testKey = "update-admin";
 
 describe('/admin update endpoint', () => {
     let createdAdmin;
@@ -15,7 +16,7 @@ describe('/admin update endpoint', () => {
             .post(`/v1/cms/admins/create-test`)
             .send({
                 name: process.env.TEST_ADMIN_NAME,
-                email: process.env.TEST_ADMIN_EMAIL,
+                email: testKey + process.env.TEST_ADMIN_EMAIL,
                 password: process.env.TEST_ADMIN_PASSWORD
             });
 
@@ -26,7 +27,7 @@ describe('/admin update endpoint', () => {
         const responseLogin = await request(app)
             .post('/v1/cms/admins/login')
             .send({
-                email: process.env.TEST_ADMIN_EMAIL,
+                email: testKey + process.env.TEST_ADMIN_EMAIL,
                 password: process.env.TEST_ADMIN_PASSWORD
             });
 
@@ -69,7 +70,7 @@ describe('/admin update endpoint', () => {
             .set('Authorization', `Bearer ${jwtToken}`)
             .send({
                 name: "Test Update Example",
-                email: "test-update@example.com",
+                email: testKey + "test-update@example.com",
                 password: "test-update-password",
                 gender: "female",
                 notification_email: "no",
@@ -88,7 +89,7 @@ describe('/admin update endpoint', () => {
             .set('Authorization', `Bearer ${jwtToken}`)
             .send({
                 name: "Test Update Example",
-                email: "test-update@example.com",
+                email: testKey + "test-update@example.com",
                 password: "test-update-password",
                 gender: "female",
                 notification_email: "no",
@@ -117,7 +118,7 @@ describe('/admin update endpoint', () => {
             .put('/v1/cms/admins/' + createdAdmin.id)
             .send({
                 name: "Test Update Example",
-                email: "test-update@example.com",
+                email: testKey + "test-update@example.com",
                 password: "test-update-password",
                 gender: "female",
                 notification_email: "no",
@@ -136,7 +137,7 @@ describe('/admin update endpoint', () => {
             .set('Authorization', `Bearer ${jwtToken + "x"}`)
             .send({
                 name: "Test Update Example",
-                email: "test-update@example.com",
+                email: testKey + "test-update@example.com",
                 password: "test-update-password",
                 gender: "female",
                 notification_email: "no",
