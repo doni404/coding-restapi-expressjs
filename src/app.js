@@ -3,6 +3,7 @@ import express from 'express';
 import { responseWithoutData } from './utils/helper_response.js';
 
 import adminCMS from './routes/cms/admin.js';
+import adminLoginLogCMS from './routes/cms/admin_login_log.js';
 
 // Defining the Express app
 const app = express();
@@ -22,6 +23,7 @@ app.get('/', (req, res) => {
 
 // v1 cms
 app.use('/v1/cms/admins', adminCMS);
+app.use('/v1/cms/admin-login-logs', adminLoginLogCMS);
 
 // 404 Not Found Middleware
 app.use((req, res, next) => {
