@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 dotenv.config({ path: './.env.test' });
 const testKey = "get-log";
 
-describe('/admin create endpoint', () => {
+describe('/admin-login-log get endpoint', () => {
     let createdAdmin;
     let jwtToken;
 

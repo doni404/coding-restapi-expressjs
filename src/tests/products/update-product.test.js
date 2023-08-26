@@ -8,7 +8,7 @@ import path from 'path';
 dotenv.config({ path: './.env.test' });
 const testKey = "update-product";
 
-describe('/admin update endpoint', () => {
+describe('/product update endpoint', () => {
     let createdAdmin;
     let createdProduct;
     let jwtToken;

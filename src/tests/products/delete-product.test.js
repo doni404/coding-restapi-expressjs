@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 dotenv.config({ path: './.env.test' });
 const testKey = "delete-product";
 
-describe('/admin delete endpoint', () => {
+describe('/product delete endpoint', () => {
     let createdAdmin;
     let createdProduct;
     let jwtToken;
