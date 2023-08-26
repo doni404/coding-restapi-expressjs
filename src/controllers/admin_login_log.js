@@ -1,6 +1,5 @@
 import * as model from '../models/admin_login_log.js';
 import db from '../configs/db.js';
-import jwt from 'jsonwebtoken';
 import { response, responseWithoutData } from '../utils/helper_response.js';
 
 export async function getLogsByAdminId(req, res) {
@@ -12,7 +11,6 @@ export async function getLogsByAdminId(req, res) {
 
         return res.status(200).send(response('success', 'Successfully get admin login logs', adminLogs));
     } catch (error) {
-        console.log(error);
         return res.status(500).send(responseWithoutData('error', 'something error'));
     }
 }

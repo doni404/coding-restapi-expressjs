@@ -7,7 +7,8 @@ import { response, responseWithoutData } from '../utils/helper_response.js';
 import { getPaginationParams } from '../utils/helper_query.js';
 import * as helper from '../utils/helper_mailer.js'
 
-dotenv.config();
+// Load environment variables from .env
+dotenv.config({ path: './.env' });
 
 export async function login(req, res) {
     const { email, password } = req.body;
@@ -119,7 +120,6 @@ export async function getAdmins(req, res) {
 
         return res.status(200).send(response('success', 'Successfully get all admins', data));
     } catch (error) {
-        console.log(error);
         return res.status(500).send(responseWithoutData('error', 'something error'));
     }
 }
@@ -137,7 +137,6 @@ export async function getAdmin(req, res) {
 
         return res.status(200).send(response('success', 'Successfully get admin', admin[0]));
     } catch (error) {
-        console.log(error);
         return res.status(500).send(responseWithoutData('error', 'something error'));
     }
 }
@@ -282,7 +281,6 @@ export async function resetPassword(req, res) {
             return res.status(200).send(responseWithoutData('success', 'Successfully updated admin password'))
         }
     } catch (error) {
-        console.log(error);
         return res.status(500).send(responseWithoutData('error', 'something error'))
     }
 }
