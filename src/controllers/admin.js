@@ -7,7 +7,8 @@ import { response, responseWithoutData } from '../utils/helper_response.js';
 import { getPaginationParams } from '../utils/helper_query.js';
 import * as helper from '../utils/helper_mailer.js'
 
-dotenv.config();
+// Load environment variables from .env
+dotenv.config({ path: './.env' });
 
 export async function login(req, res) {
     const { email, password } = req.body;
