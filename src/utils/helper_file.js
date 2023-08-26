@@ -15,8 +15,6 @@ export async function saveBase64ImageToPath(base64Image, dirPath) {
     // Check the image extension
     const type = await fileTypeFromBuffer(imageBuffer);
 
-    console.log(type);
-
     if (!type) {
         throw new Error("Unsupported file type");
     }

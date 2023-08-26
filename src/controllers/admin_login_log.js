@@ -11,7 +11,6 @@ export async function getLogsByAdminId(req, res) {
 
         return res.status(200).send(response('success', 'Successfully get admin login logs', adminLogs));
     } catch (error) {
-        console.log(error);
         return res.status(500).send(responseWithoutData('error', 'something error'));
     }
 }

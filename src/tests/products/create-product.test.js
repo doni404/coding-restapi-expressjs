@@ -89,8 +89,6 @@ describe('/product create endpoint', () => {
         const imageBuffer = fs.readFileSync(imagePath);
         const imageBase64 = imageBuffer.toString('base64');
 
-        console.log(imageBase64);
-
         // Make request to create product
         const response = await request(app)
             .post('/v1/cms/products')

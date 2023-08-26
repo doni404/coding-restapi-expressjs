@@ -39,7 +39,6 @@ export async function createProduct(req, res) {
 
         return res.status(201).send(response('success', 'Product successfully created!', createdData[0]));
     } catch (error) {
-        console.log(error);
         return res.status(500).send(responseWithoutData('error', 'something error'));
     }
 }
@@ -66,7 +65,6 @@ export async function getProducts(req, res) {
 
         return res.status(200).send(response('success', 'Successfully get all products', data));
     } catch (error) {
-        console.log(error);
         return res.status(500).send(responseWithoutData('error', 'something error'));
     }
 }
@@ -84,7 +82,6 @@ export async function getProduct(req, res) {
 
         return res.status(200).send(response('success', 'Successfully get product', product[0]));
     } catch (error) {
-        console.log(error);
         return res.status(500).send(responseWithoutData('error', 'something error'));
     }
 }
@@ -95,8 +92,6 @@ export async function updateProduct(req, res) {
     if (Object.keys(req.body).length === 0) {
         return res.status(400).send(responseWithoutData('error', 'Invalid request body'));
     }
-
-    console.log(req.body);
 
     try {
         // Check the product exist or not
