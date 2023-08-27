@@ -1,4 +1,4 @@
-import * as model from '../models/product.js';
+import * as model from '../models/supplier.js';
 import db from '../configs/db.js';
 import dotenv from 'dotenv';
 import { response, responseWithoutData } from '../utils/helper_response.js';
@@ -8,12 +8,12 @@ import * as fileHelper from '../utils/helper_file.js';
 // Load environment variables from .env
 dotenv.config({ path: './.env' });
 
-const UPLOAD_DIR = './uploads/products/';
+const UPLOAD_DIR = './uploads/suppliers/';
 
-export async function createProduct(req, res) {
-    const { code, name, price, type } = req.body;
+export async function createSupplier(req, res) {
+    const { code, name, phone } = req.body;
 
-    if (!code || !name || !price || !type) {
+    if (!code || !name || !phone) {
         return res.status(400).send(responseWithoutData('error', 'Invalid request body'));
     }
 
@@ -35,79 +35,79 @@ export async function createProduct(req, res) {
             updated_at: new Date()
         }
 
-        let createdData = await model.createProduct(db, data);
+        let createdData = await model.createSupplier(db, data);
 
-        return res.status(201).send(response('success', 'Product successfully created!', createdData[0]));
+        return res.status(201).send(response('success', 'Supplier successfully created!', createdData[0]));
     } catch (error) {
         return res.status(500).send(responseWithoutData('error', 'something error'));
     }
 }
 
-export async function getProducts(req, res) {
+export async function getSuppliers(req, res) {
     // Parse pagination params using the helper function
     const { limit, offset, sort } = getPaginationParams(req.query);
 
     try {
-        // Get all products
-        let products = await model.findAll(db, { limit, offset, sort });
+        // Get all suppliers
+        let suppliers = await model.findAll(db, { limit, offset, sort });
 
-        let totalProducts = (await model.findTotalCount(db))[0].total;
+        let totalSuppliers = (await model.findTotalCount(db))[0].total;
 
         let data = {
-            items: products,
+            items: suppliers,
             pagination: {
-                totalItems: totalProducts,
+                totalItems: totalSuppliers,
                 currentPage: Math.floor(offset / limit) + 1,
                 itemsPerPage: limit,
-                totalPages: Math.ceil(totalProducts / limit)
+                totalPages: Math.ceil(totalSuppliers / limit)
             }
         }
 
-        return res.status(200).send(response('success', 'Successfully get all products', data));
+        return res.status(200).send(response('success', 'Successfully get all suppliers', data));
     } catch (error) {
         return res.status(500).send(responseWithoutData('error', 'something error'));
     }
 }
 
-export async function getProduct(req, res) {
-    const id = req.params.productId;
+export async function getSupplier(req, res) {
+    const id = req.params.supplierId;
 
     try {
-        // Get the product by Id
-        let product = await model.findById(db, id);
+        // Get the supplier by Id
+        let supplier = await model.findById(db, id);
 
-        if (product.length === 0) {
-            return res.status(404).send(responseWithoutData('error', 'Product not found!'));
+        if (supplier.length === 0) {
+            return res.status(404).send(responseWithoutData('error', 'Supplier not found!'));
         }
 
-        return res.status(200).send(response('success', 'Successfully get product', product[0]));
+        return res.status(200).send(response('success', 'Successfully get the supplier', supplier[0]));
     } catch (error) {
         return res.status(500).send(responseWithoutData('error', 'something error'));
     }
 }
 
-export async function updateProduct(req, res) {
-    const id = req.params.productId;
+export async function updateSupplier(req, res) {
+    const id = req.params.supplierId;
 
     if (Object.keys(req.body).length === 0) {
         return res.status(400).send(responseWithoutData('error', 'Invalid request body'));
     }
 
     try {
-        // Check the product exist or not
-        let checkProduct = await model.findById(db, id);
+        // Check the supplier exist or not
+        let checkSupplier = await model.findById(db, id);
 
-        if (checkProduct.length === 0) {
-            return res.status(404).send(responseWithoutData('error', 'Product not found!'));
+        if (checkSupplier.length === 0) {
+            return res.status(404).send(responseWithoutData('error', 'Supplier not found!'));
         }
 
-        checkProduct = checkProduct[0];
+        checkSupplier = checkSupplier[0];
 
         // Check image need to update
         if (req.body.photo) {
             // If there's an existing photo, delete it
-            if (checkProduct.photo) {
-                await fileHelper.deleteImage(checkProduct.photo, UPLOAD_DIR);
+            if (checkSupplier.photo) {
+                await fileHelper.deleteImage(checkSupplier.photo, UPLOAD_DIR);
             }
 
             // Upload the new photo
@@ -125,22 +125,22 @@ export async function updateProduct(req, res) {
             updated_at: new Date(),
         }
 
-        let updatedProduct = await model.updateProduct(db, data);
-        return res.status(200).send(response('sucess', 'Product successfully updated !', updatedProduct[0]));
+        let updatedSupplier = await model.updateSupplier(db, data);
+        return res.status(200).send(response('sucess', 'Supplier successfully updated !', updatedSupplier[0]));
     } catch (error) {
         return res.status(500).send(responseWithoutData('error', 'something error'));
     }
 }
 
-export async function deleteProduct(req, res) {
-    const id = req.params.productId;
+export async function deleteSupplier(req, res) {
+    const id = req.params.supplierId;
 
     try {
-        // Check the product exist or not
-        let checkProduct = await model.findById(db, id);
+        // Check the supplier exist or not
+        let checkSupplier = await model.findById(db, id);
 
-        if (checkProduct.length === 0) {
-            return res.status(404).send(responseWithoutData('error', 'Product not found!'));
+        if (checkSupplier.length === 0) {
+            return res.status(404).send(responseWithoutData('error', 'Supplier not found!'));
         }
 
         // Get the admin id who delete this from token extraction
@@ -153,32 +153,32 @@ export async function deleteProduct(req, res) {
             deleted_at: new Date(),
         }
 
-        let deletedProduct = await model.deleteProduct(db, data);
-        return res.status(200).send(response('sucess', 'Product successfully deleted !', deletedProduct[0]));
+        let deletedSupplier = await model.deleteSupplier(db, data);
+        return res.status(200).send(response('sucess', 'Supplier successfully deleted !', deletedSupplier[0]));
     } catch (error) {
         return res.status(500).send(responseWithoutData('error', 'something error'));
     }
 }
 
-export async function deleteProductPermanent(req, res) {
-    const id = req.params.productId;
+export async function deleteSupplierPermanent(req, res) {
+    const id = req.params.supplierId;
 
     try {
-        let checkProduct = await model.findDeletedById(db, id);
+        let checkSupplier = await model.findDeletedById(db, id);
 
-        if (checkProduct.length === 0) {
-            return res.status(404).send(responseWithoutData('error', 'Product can\'t be deleted permanently!'));
+        if (checkSupplier.length === 0) {
+            return res.status(404).send(responseWithoutData('error', 'Supplier can\'t be deleted permanently!'));
         }
 
-        checkProduct = checkProduct[0];
+        checkSupplier = checkSupplier[0];
 
         // If there's an existing photo, delete it
-        if (checkProduct.photo) {
-            await fileHelper.deleteImage(checkProduct.photo, UPLOAD_DIR);
+        if (checkSupplier.photo) {
+            await fileHelper.deleteImage(checkSupplier.photo, UPLOAD_DIR);
         }
 
-        await model.deleteProductPermanent(db, id);
-        return res.status(200).send(responseWithoutData('success', 'Product deleted permanently!'));
+        await model.deleteSupplierPermanent(db, id);
+        return res.status(200).send(responseWithoutData('success', 'Supplier deleted permanently!'));
     } catch (error) {
         return res.status(500).send(responseWithoutData('error', 'something error'));
     }

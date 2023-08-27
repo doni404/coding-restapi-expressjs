@@ -1,6 +1,6 @@
 export function findAll(db, params) {
     return new Promise((resolve, reject) => {
-        db.query("SELECT * FROM products WHERE deleted_at IS NULL ORDER BY ? LIMIT ? OFFSET ?", [params.sort.field + " " + params.sort.direction, params.limit, params.offset], function(error, results, fields) {
+        db.query("SELECT * FROM suppliers WHERE deleted_at IS NULL ORDER BY ? LIMIT ? OFFSET ?", [params.sort.field + " " + params.sort.direction, params.limit, params.offset], function(error, results, fields) {
             if(error) {
                 reject(error);
             }
@@ -11,7 +11,7 @@ export function findAll(db, params) {
 
 export function findTotalCount(db) {
     return new Promise((resolve, reject) => {
-        db.query("SELECT count(id) as total FROM products WHERE deleted_at IS NULL", function(error, results, fields) {
+        db.query("SELECT count(id) as total FROM suppliers WHERE deleted_at IS NULL", function(error, results, fields) {
             if (error) {
                 reject(error);
             }
@@ -22,7 +22,7 @@ export function findTotalCount(db) {
 
 export function findById(db, id) {
     return new Promise((resolve, reject) => {
-        db.query("SELECT * FROM products WHERE id = ? AND deleted_at IS NULL", [id], function (error, results, fields) {
+        db.query("SELECT * FROM suppliers WHERE id = ? AND deleted_at IS NULL", [id], function (error, results, fields) {
             if (error) {
                 reject(error);
             }
@@ -33,7 +33,7 @@ export function findById(db, id) {
 
 export function findByCode(db, code) {
     return new Promise((resolve, reject) => {
-        db.query("SELECT * FROM products WHERE code = ? AND deleted_at IS NULL", [code], function (error, results, fields) {
+        db.query("SELECT * FROM suppliers WHERE code = ? AND deleted_at IS NULL", [code], function (error, results, fields) {
             if (error) {
                 reject(error);
             }
@@ -44,7 +44,7 @@ export function findByCode(db, code) {
 
 export function findDeletedById(db, id) {
     return new Promise((resolve, reject) => {
-        db.query("SELECT * FROM products WHERE id = ? AND deleted_at IS NOT NULL", [id], function (error, results, fields) {
+        db.query("SELECT * FROM suppliers WHERE id = ? AND deleted_at IS NOT NULL", [id], function (error, results, fields) {
             if (error) {
                 reject(error);
             }
@@ -53,9 +53,9 @@ export function findDeletedById(db, id) {
     });
 }
 
-export function createProduct(db, data) {
+export function createSupplier(db, data) {
     return new Promise((resolve, reject) => {
-        db.query("INSERT INTO products SET ?", [data], async function (error, result, fields) {
+        db.query("INSERT INTO suppliers SET ?", [data], async function (error, result, fields) {
             if (error) {
                 reject(error);
             }
@@ -71,9 +71,9 @@ export function createProduct(db, data) {
     });
 }
 
-export function updateProduct(db, data) {
+export function updateSupplier(db, data) {
     return new Promise((resolve, reject) => {
-        db.query("UPDATE products SET ? WHERE id = ?", [data, data.id], async function (error, result, fields) {
+        db.query("UPDATE suppliers SET ? WHERE id = ?", [data, data.id], async function (error, result, fields) {
             if (error) {
                 reject(error);
             }
@@ -89,9 +89,9 @@ export function updateProduct(db, data) {
     });
 }
 
-export function deleteProduct(db, data) {
+export function deleteSupplier(db, data) {
     return new Promise((resolve, reject) => {
-        db.query("UPDATE products SET ? WHERE id = ?", [data, data.id], async function (error, results, fields) {
+        db.query("UPDATE suppliers SET ? WHERE id = ?", [data, data.id], async function (error, results, fields) {
             if (error) {
                 reject(error);
             }
@@ -107,9 +107,9 @@ export function deleteProduct(db, data) {
     });
 }
 
-export function deleteProductPermanent(db, id) {
+export function deleteSupplierPermanent(db, id) {
     return new Promise((resolve, reject) => {
-        db.query("DELETE FROM products WHERE id = ?", [id], function (error, results, fields) {
+        db.query("DELETE FROM suppliers WHERE id = ?", [id], function (error, results, fields) {
             if (error) {
                 reject(error);
             }
