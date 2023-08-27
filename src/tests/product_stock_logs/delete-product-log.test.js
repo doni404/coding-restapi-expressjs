@@ -4,9 +4,9 @@ import dotenv from 'dotenv';
 
 // Load environment variables from .env.test
 dotenv.config({ path: './.env.test' });
-const testKey = "delete-product";
+const testKey = "delete-product-log";
 
-describe('/product delete endpoint', () => {
+describe('/product-log delete endpoint', () => {
     let createdAdmin;
     let createdProduct;
     let jwtToken;
@@ -46,8 +46,8 @@ describe('/product delete endpoint', () => {
             .post('/v1/cms/products')
             .set('Authorization', `Bearer ${jwtToken}`)
             .send({
-                code: testKey + "TEST01",
-                name: "Coding 01",
+                code: "TEST01",
+                name: testKey + "Coding 01",
                 description: "This is description of coding in test purpose",
                 price: 22500,
                 tax: 0,
@@ -66,6 +66,7 @@ describe('/product delete endpoint', () => {
     afterAll(async () => {
         // Clean up resources, close connections, etc.
         // For example, you can delete the created admin user
+        await deleteProduct(createdProduct);
         await deleteAdmin(createdAdmin);
     });
 
@@ -86,43 +87,48 @@ describe('/product delete endpoint', () => {
         }
     }
 
-    it('should soft delete product with the valid data', async() => {
+    async function deleteProduct(product) {
+        if (product) {
+            // Delete product for testing
+            const responseDelete = await request(app)
+                .delete(`/v1/cms/products/${product.id}`)
+                .set('Authorization', `Bearer ${jwtToken}`);
+
+            expect(responseDelete.status).toBe(200);
+
+            const responseDeletePermanent = await request(app)
+                .delete(`/v1/cms/products/${product.id}/permanent`)
+                .set('Authorization', `Bearer ${jwtToken}`);
+
+            expect(responseDeletePermanent.status).toBe(200);
+        }
+    }
+
+    it('should delete permanent the log', async () => {
+        // Create log test
+        const responseLog = await request(app)
+            .post('/v1/cms/product-stock-logs')
+            .set('Authorization', `Bearer ${jwtToken}`)
+            .send({
+                product_id: createdProduct.id,
+                quantity: 5,
+                type: "manual"
+            });
+
+        expect(responseLog.status).toBe(201);
+        expect(responseLog.body).toHaveProperty('data');
+
+        // Delete log test
         const response = await request(app)
-        .delete('/v1/cms/products/' + createdProduct.id)
-        .set('Authorization', `Bearer ${jwtToken}`);
+            .delete('/v1/cms/product-stock-logs/' + responseLog.body.data.id + "/permanent")
+            .set('Authorization', `Bearer ${jwtToken}`);
 
         expect(response.status).toBe(200);
     });
 
-    it('should return an error when no data exist or already deleted', async() => {
-        const response = await request(app)
-            .delete('/v1/cms/products/0')
-            .set('Authorization', `Bearer ${jwtToken}`);
-
-        expect(response.status).toBe(404);
-        expect(response.body).toHaveProperty('code', 'error');
-
-        const responseDeleted = await request(app)
-        .delete('/v1/cms/products/' + createdAdmin.id)
-        .set('Authorization', `Bearer ${jwtToken}`);
-
-        expect(responseDeleted.status).toBe(404);
-        expect(responseDeleted.body).toHaveProperty('code', 'error');
-    });
-
-    it('should return an error when no id in param', async () => {
-        const response = await request(app)
-            .delete('/v1/cms/products/')
-            .set('Authorization', `Bearer ${jwtToken}`);
-
-        expect(response.status).toBe(404);
-        expect(response.body).toHaveProperty('code', 'error');
-        expect(response.body).toHaveProperty('message', 'Invalid endpoint url');
-    });
-
     it('should return an error when no authorization header', async () => {
         const response = await request(app)
-            .delete('/v1/cms/products/' + createdProduct.id);
+            .delete('/v1/cms/product-stock-logs/0/permanent');
 
         expect(response.status).toBe(401);
         expect(response.body).toHaveProperty('code', 'error');
@@ -130,27 +136,10 @@ describe('/product delete endpoint', () => {
 
     it('should return an error with wrong or invalid authorization token', async () => {
         const response = await request(app)
-            .delete('/v1/cms/products/' + createdProduct.id)
+            .delete('/v1/cms/product-stock-logs/0/permanent')
             .set('Authorization', `Bearer ${jwtToken + "x"}`);
 
         expect(response.status).toBe(403);
-        expect(response.body).toHaveProperty('code', 'error');
-    });
-
-    it('should delete product permanently', async() => {
-        const response = await request(app)
-            .delete('/v1/cms/products/' + createdProduct.id + '/permanent')
-            .set('Authorization', `Bearer ${jwtToken}`);
-
-        expect(response.status).toBe(200);
-    });
-
-    it('should return an error when delete product permanently but not exist', async() => {
-        const response = await request(app)
-            .delete('/v1/cms/products/0/permanent')
-            .set('Authorization', `Bearer ${jwtToken}`);
-
-        expect(response.status).toBe(404);
         expect(response.body).toHaveProperty('code', 'error');
     });
 });
