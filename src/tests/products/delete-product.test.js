@@ -64,7 +64,9 @@ describe('/product delete endpoint', () => {
     });
 
     afterAll(async () => {
-        // not need delete after all because data already deleted within case.
+        // Clean up resources, close connections, etc.
+        // For example, you can delete the created admin user
+        await deleteAdmin(createdAdmin);
     });
 
     async function deleteAdmin(admin) {
