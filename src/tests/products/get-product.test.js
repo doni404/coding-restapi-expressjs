@@ -84,7 +84,7 @@ describe('/product get list and by id endpoint', () => {
     it('should get all products with the valid data', async () => {
         const response = await request(app)
             .get('/v1/cms/products')
-            .set('Authorization', `Bearer ${jwtToken}`)
+            .set('Authorization', `Bearer ${jwtToken}`);
 
         expect(response.status).toBe(200);
         expect(response.body).toHaveProperty('data');
@@ -93,7 +93,7 @@ describe('/product get list and by id endpoint', () => {
 
     it('should return an error with no authorization header (all products)', async () => {
         const response = await request(app)
-            .get('/v1/cms/products')
+            .get('/v1/cms/products');
 
         expect(response.status).toBe(401);
         expect(response.body).toHaveProperty('code', 'error');
@@ -102,7 +102,7 @@ describe('/product get list and by id endpoint', () => {
     it('should return an error with wrong or ivalid auth token (all products)', async () => {
         const response = await request(app)
             .get('/v1/cms/products')
-            .set('Authorization', `Bearer ${jwtToken}+"x"`)
+            .set('Authorization', `Bearer ${jwtToken}+"x"`);
 
         expect(response.status).toBe(403);
         expect(response.body).toHaveProperty('code', 'error');
@@ -132,7 +132,7 @@ describe('/product get list and by id endpoint', () => {
         // Get product data by Id
         const response = await request(app)
             .get('/v1/cms/products/' + responseProduct.body.data.id)
-            .set('Authorization', `Bearer ${jwtToken}`)
+            .set('Authorization', `Bearer ${jwtToken}`);
 
         expect(response.status).toBe(200);
         expect(response.body).toHaveProperty('data');
@@ -144,7 +144,7 @@ describe('/product get list and by id endpoint', () => {
     it('should return an error when param not id', async () => {
         const response = await request(app)
             .get('/v1/cms/products/xxxx')
-            .set('Authorization', `Bearer ${jwtToken}`)
+            .set('Authorization', `Bearer ${jwtToken}`);
 
         expect(response.status).toBe(404);
         expect(response.body).toHaveProperty('code', 'error');
@@ -152,7 +152,7 @@ describe('/product get list and by id endpoint', () => {
 
     it('should return an error with no authorization header (product by id)', async () => {
         const response = await request(app)
-            .get('/v1/cms/products/' + createdAdmin.id)
+            .get('/v1/cms/products/' + createdAdmin.id);
 
         expect(response.status).toBe(401);
         expect(response.body).toHaveProperty('code', 'error');
@@ -161,7 +161,7 @@ describe('/product get list and by id endpoint', () => {
     it('should return an error when data doesn\'t exist', async () => {
         const response = await request(app)
             .get('/v1/cms/products/0')
-            .set('Authorization', `Bearer ${jwtToken}`)
+            .set('Authorization', `Bearer ${jwtToken}`);
 
         expect(response.status).toBe(404);
         expect(response.body).toHaveProperty('code', 'error');
