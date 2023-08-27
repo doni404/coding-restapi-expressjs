@@ -4,9 +4,9 @@ import dotenv from 'dotenv';
 
 // Load environment variables from .env.test
 dotenv.config({ path: './.env.test' });
-const testKey = "get-product";
+const testKey = "get-product-stock-logs";
 
-describe('/product get list and by id endpoint', () => {
+describe('/product-log get list and by id endpoint', () => {
     let createdAdmin;
     let jwtToken;
 
@@ -81,9 +81,20 @@ describe('/product get list and by id endpoint', () => {
         }
     }
 
-    it('should get all products with the valid data', async () => {
+    async function deleteStockLog(stockLog) {
+        if (stockLog) {
+            // Delete product stock log for testing
+            const responseDeletePermanent = await request(app)
+                .delete(`/v1/cms/product-stock-logs/${stockLog.id}/permanent`)
+                .set('Authorization', `Bearer ${jwtToken}`);
+
+            expect(responseDeletePermanent.status).toBe(200);
+        }
+    }
+
+    it('should get all product stock logs with the valid data', async () => {
         const response = await request(app)
-            .get('/v1/cms/products')
+            .get('/v1/cms/product-stock-logs')
             .set('Authorization', `Bearer ${jwtToken}`);
 
         expect(response.status).toBe(200);
@@ -91,24 +102,24 @@ describe('/product get list and by id endpoint', () => {
         expect(response.body.data).toHaveProperty('items');
     });
 
-    it('should return an error with no authorization header (all products)', async () => {
+    it('should return an error with no authorization header (all logs)', async () => {
         const response = await request(app)
-            .get('/v1/cms/products');
+            .get('/v1/cms/product-stock-logs');
 
         expect(response.status).toBe(401);
         expect(response.body).toHaveProperty('code', 'error');
     });
 
-    it('should return an error with wrong or ivalid auth token (all products)', async () => {
+    it('should return an error with wrong or ivalid auth token (all logs)', async () => {
         const response = await request(app)
-            .get('/v1/cms/products')
+            .get('/v1/cms/product-stock-logs')
             .set('Authorization', `Bearer ${jwtToken}+"x"`);
 
         expect(response.status).toBe(403);
         expect(response.body).toHaveProperty('code', 'error');
     });
 
-    it('should get product by id', async () => {
+    it('should get logs by product id', async () => {
         // Create test product
         const responseProduct = await request(app)
             .post('/v1/cms/products')
@@ -128,83 +139,47 @@ describe('/product get list and by id endpoint', () => {
 
         expect(responseProduct.status).toBe(201);
         expect(responseProduct.body).toHaveProperty('data');
-        
-        // Get product data by Id
+
+        // Create log test
+        const responseLog = await request(app)
+            .post('/v1/cms/product-stock-logs')
+            .set('Authorization', `Bearer ${jwtToken}`)
+            .send({
+                product_id: responseProduct.body.data.id,
+                quantity: -2,
+                type: "manual"
+            });
+
+        expect(responseLog.status).toBe(201);
+        expect(responseLog.body).toHaveProperty('data');
+
+        // Get all stock logs by product id
         const response = await request(app)
-            .get('/v1/cms/products/' + responseProduct.body.data.id)
+            .get('/v1/cms/product-stock-logs/products/' + responseProduct.body.data.id)
             .set('Authorization', `Bearer ${jwtToken}`);
 
         expect(response.status).toBe(200);
         expect(response.body).toHaveProperty('data');
 
-        // Delete the created product
+        // Delete product and test logs
+        deleteStockLog(responseLog.body.data);
         deleteProduct(responseProduct.body.data);
     });
 
-    it('should return an error when param not id', async () => {
+    it('should return an error with no authorization header (logs by product id)', async () => {
         const response = await request(app)
-            .get('/v1/cms/products/xxxx')
-            .set('Authorization', `Bearer ${jwtToken}`);
-
-        expect(response.status).toBe(404);
-        expect(response.body).toHaveProperty('code', 'error');
-    });
-
-    it('should return an error with no authorization header (product by id)', async () => {
-        const response = await request(app)
-            .get('/v1/cms/products/' + createdAdmin.id);
+            .get('/v1/cms/product-stock-logs/products/0');
 
         expect(response.status).toBe(401);
         expect(response.body).toHaveProperty('code', 'error');
     });
 
-    it('should return an error when data doesn\'t exist', async () => {
+    it('should return an error with invalid token header (logs by product id)', async () => {
         const response = await request(app)
-            .get('/v1/cms/products/0')
-            .set('Authorization', `Bearer ${jwtToken}`);
+            .get('/v1/cms/product-stock-logs/products/0')
+            .set('Authorization', `Bearer ${jwtToken + "x"}`);
 
-        expect(response.status).toBe(404);
+        expect(response.status).toBe(403);
         expect(response.body).toHaveProperty('code', 'error');
     });
-
-    it('should return an error when data exist but deleted', async () => {
-        // Create test product
-        const responseCreate = await request(app)
-            .post('/v1/cms/products')
-            .set('Authorization', `Bearer ${jwtToken}`)
-            .send({
-                code: testKey + "TEST01",
-                name: "Coding 01",
-                description: "This is description of coding in test purpose",
-                price: 22500,
-                tax: 0,
-                type: "food",
-                stock: 0,
-                stock_alert: 5,
-                situation: "active",
-                note: null
-            });
-
-        // Soft delete product above
-        const responseDelete = await request(app)
-            .delete(`/v1/cms/products/${responseCreate.body.data.id}`)
-            .set('Authorization', `Bearer ${jwtToken}`);
-
-        expect(responseDelete.status).toBe(200);
-
-        // Get product by ID
-        const response = await request(app)
-            .get('/v1/cms/products/' + responseCreate.body.data.id)
-            .set('Authorization', `Bearer ${jwtToken}`)
-
-        expect(response.status).toBe(404);
-        expect(response.body).toHaveProperty('code', 'error');
-
-        // Delete permanent the created product above
-        const responseDeletePermanent = await request(app)
-            .delete(`/v1/cms/products/${responseCreate.body.data.id}/permanent`)
-            .set('Authorization', `Bearer ${jwtToken}`);
-
-        expect(responseDeletePermanent.status).toBe(200);
-    });
-}); 
+});
