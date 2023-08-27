@@ -75,11 +75,17 @@ export async function deleteLogPermanent(req, res) {
     const id = req.params.logId;
 
     try {
+        // Check data exist or not
+        let checkLog = await model.findById(db, id);
+        
+        if (checkLog.length === 0) {
+            return res.status(404).send(responseWithoutData('error', 'Product log not found!'));
+        }
+
         await model.deleteLogPermanent(db, id);
 
         return res.status(200).send(responseWithoutData('success', 'Stock logs deleted permanently!'));
     } catch (error) {
-        console.log(error);
         return res.status(500).send(responseWithoutData('error', 'something error')); 
     }
 }
