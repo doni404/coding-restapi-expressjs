@@ -3,7 +3,7 @@ import db from '../configs/db.js';
 import dotenv from 'dotenv';
 import { response, responseWithoutData } from '../utils/helper_response.js';
 import { getPaginationParams } from '../utils/helper_query.js';
-import * as uploadHelper from '../utils/helper_file.js';
+import * as fileHelper from '../utils/helper_file.js';
 
 // Load environment variables from .env
 dotenv.config({ path: './.env' });
@@ -20,7 +20,7 @@ export async function createProduct(req, res) {
     try {
         // Upload the photo if the image attached
         if (req.body.photo) {
-            let imagePath = await uploadHelper.saveBase64ImageToPath(req.body.photo, UPLOAD_DIR);
+            let imagePath = await fileHelper.saveBase64ImageToPath(req.body.photo, UPLOAD_DIR);
             req.body.photo = imagePath;
         }
 
@@ -107,11 +107,11 @@ export async function updateProduct(req, res) {
         if (req.body.photo) {
             // If there's an existing photo, delete it
             if (checkProduct.photo) {
-                await uploadHelper.deleteImage(checkProduct.photo, UPLOAD_DIR);
+                await fileHelper.deleteImage(checkProduct.photo, UPLOAD_DIR);
             }
 
             // Upload the new photo
-            let newImagePath = await uploadHelper.saveBase64ImageToPath(req.body.photo, UPLOAD_DIR);
+            let newImagePath = await fileHelper.saveBase64ImageToPath(req.body.photo, UPLOAD_DIR);
             req.body.photo = newImagePath;
         }
 
@@ -136,7 +136,7 @@ export async function deleteProduct(req, res) {
     const id = req.params.productId;
 
     try {
-        // Check the admin exist or not
+        // Check the product exist or not
         let checkProduct = await model.findById(db, id);
 
         if (checkProduct.length === 0) {
@@ -174,7 +174,7 @@ export async function deleteProductPermanent(req, res) {
 
         // If there's an existing photo, delete it
         if (checkProduct.photo) {
-            await uploadHelper.deleteImage(checkProduct.photo, UPLOAD_DIR);
+            await fileHelper.deleteImage(checkProduct.photo, UPLOAD_DIR);
         }
 
         await model.deleteProductPermanent(db, id);
