@@ -33,7 +33,7 @@ export function findById(db, id) {
 
 export function findByCode(db, code) {
     return new Promise((resolve, reject) => {
-        db.query("SELECT * FROM products WHERE code = ? AND deleted_at IS NULL", [id], function (error, results, fields) {
+        db.query("SELECT * FROM products WHERE code = ? AND deleted_at IS NULL", [code], function (error, results, fields) {
             if (error) {
                 reject(error);
             }
