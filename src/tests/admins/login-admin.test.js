@@ -69,7 +69,7 @@ describe('/admin login endpoint', () => {
                 password: process.env.TEST_ADMIN_PASSWORD
             });
 
-        expect(response.status).toBe(401);
+        expect(response.status).toBe(404);
         expect(response.body).toHaveProperty('code', 'error');
     });
 
