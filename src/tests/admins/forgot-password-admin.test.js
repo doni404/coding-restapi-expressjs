@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 
 // Load environment variables from .env.test
 dotenv.config({ path: './.env.test' });
-const testKey = "forgot-password";
+const testKey = "forgot-password-admin";
 
 describe('/admin forgot password endpoint', () => {
     let createdAdmin;
