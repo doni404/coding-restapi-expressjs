@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 
 // Load environment variables from .env.test
 dotenv.config({ path: './.env.test' });
-const testKey = "get-log";
+const testKey = "get-log-admin";
 
 describe('/admin-login-log get endpoint', () => {
     let createdAdmin;
@@ -64,46 +64,46 @@ describe('/admin-login-log get endpoint', () => {
         }
     }
 
-    it('should get admin logs by admin id with the valid data', async() => {
+    it('should get admin logs by admin id with the valid data', async () => {
         const response = await request(app)
-        .get('/v1/cms/admin-login-logs/admins/' + createdAdmin.id)
-        .set('Authorization', `Bearer ${jwtToken}`)
-        
+            .get('/v1/cms/admin-login-logs/admins/' + createdAdmin.id)
+            .set('Authorization', `Bearer ${jwtToken}`)
+
         expect(response.status).toBe(200);
         expect(response.body).toHaveProperty('data');
     });
 
-    it('should return empty array in data when no data exist', async() => {
+    it('should return empty array in data when no data exist', async () => {
         const response = await request(app)
-        .get('/v1/cms/admin-login-logs/admins/0')
-        .set('Authorization', `Bearer ${jwtToken}`)
-        
+            .get('/v1/cms/admin-login-logs/admins/0')
+            .set('Authorization', `Bearer ${jwtToken}`)
+
         expect(response.status).toBe(200);
         expect(response.body).toHaveProperty('data', []);
     });
 
-    it('should return an error when no params id in url', async() => {
+    it('should return an error when no params id in url', async () => {
         const response = await request(app)
-        .get('/v1/cms/admin-login-logs/admins/')
-        .set('Authorization', `Bearer ${jwtToken}`)
-        
+            .get('/v1/cms/admin-login-logs/admins/')
+            .set('Authorization', `Bearer ${jwtToken}`)
+
         expect(response.status).toBe(404);
         expect(response.body).toHaveProperty('code', 'error');
     });
 
-    it('should return an error when no authorization header', async() => {
+    it('should return an error when no authorization header', async () => {
         const response = await request(app)
-        .get('/v1/cms/admin-login-logs/admins/0')
-        
+            .get('/v1/cms/admin-login-logs/admins/0')
+
         expect(response.status).toBe(401);
         expect(response.body).toHaveProperty('code', 'error');
     });
 
     it('should return an error with wrong or invalid authorization token', async () => {
         const response = await request(app)
-        .get('/v1/cms/admin-login-logs/admins/0')
-        .set('Authorization', `Bearer ${jwtToken + "x"}`)
-        
+            .get('/v1/cms/admin-login-logs/admins/0')
+            .set('Authorization', `Bearer ${jwtToken + "x"}`)
+
         expect(response.status).toBe(403);
         expect(response.body).toHaveProperty('code', 'error');
     });
