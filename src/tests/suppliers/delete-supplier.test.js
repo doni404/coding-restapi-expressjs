@@ -156,7 +156,7 @@ describe('/supplier delete endpoint', () => {
         expect(response.status).toBe(200);
     });
 
-    it('should return an error when delete product permanently but not exist', async() => {
+    it('should return an error when delete supplier permanently but not exist', async() => {
         const response = await request(app)
             .delete('/v1/cms/suppliers/0/permanent')
             .set('Authorization', `Bearer ${jwtToken}`);

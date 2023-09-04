@@ -148,7 +148,7 @@ describe('/supplier get list and by id endpoint', () => {
     it('should return an error when param not id', async () => {
         const response = await request(app)
             .get('/v1/cms/suppliers/xxxx')
-            .set('Authorization', `Bearer ${jwtToken}`)
+            .set('Authorization', `Bearer ${jwtToken}`);
 
         expect(response.status).toBe(404);
         expect(response.body).toHaveProperty('code', 'error');
@@ -156,7 +156,7 @@ describe('/supplier get list and by id endpoint', () => {
 
     it('should return an error with no authorization header (supplier by id)', async () => {
         const response = await request(app)
-            .get('/v1/cms/suppliers/0')
+            .get('/v1/cms/suppliers/0');
 
         expect(response.status).toBe(401);
         expect(response.body).toHaveProperty('code', 'error');
@@ -172,7 +172,7 @@ describe('/supplier get list and by id endpoint', () => {
     });
 
     it('should return an error when data exist but deleted', async () => {
-        // Create test product
+        // Create test supplier
         const responseCreate = await request(app)
             .post('/v1/cms/suppliers')
             .set('Authorization', `Bearer ${jwtToken}`)
