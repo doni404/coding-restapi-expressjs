@@ -6,11 +6,11 @@ import path from 'path';
 
 // Load environment variables from .env.test
 dotenv.config({ path: './.env.test' });
-const testKey = "delete-supplier";
+const testKey = "login-customer";
 
-describe('/supplier delete endpoint', () => {
+describe('/customer login endpoint', () => {
     let createdAdmin;
-    let createdSupplier;
+    let createdCustomer;
     let jwtToken;
 
     beforeAll(async () => {
@@ -43,18 +43,20 @@ describe('/supplier delete endpoint', () => {
         // Store the token global
         jwtToken = responseLogin.body.data.token;
 
-        // Crate supplier test
+        // Crate customer test
         // Load an image, convert to base64
         const imagePath = path.join(__dirname, 'test-image.jpg'); // Assuming you have test-image.jpg in the same directory
         const imageBuffer = fs.readFileSync(imagePath);
         const imageBase64 = imageBuffer.toString('base64');
 
-        const responseSupplier = await request(app)
-            .post('/v1/cms/suppliers')
+        const responseCustomer = await request(app)
+            .post('/v1/cms/customers')
             .set('Authorization', `Bearer ${jwtToken}`)
             .send({
-                code: "SUP01",
-                name: testKey + "Supplier Test",
+                code: "CUS01",
+                name: testKey + " Customer Test",
+                email: testKey + process.env.TEST_CUSTOMER_EMAIL,
+                password: process.env.TEST_CUSTOMER_PASSWORD,
                 phone: "081111111111",
                 photo: imageBase64,
                 gender: "male",
@@ -63,20 +65,18 @@ describe('/supplier delete endpoint', () => {
                 city: "Sidomulyo",
                 address: "Jl. Adrenaline Test No 244",
                 situation: "active",
-                bank_name: "Bank BTTP",
-                account_name: "Johny Test",
-                account_number: "1250099232338774",
                 note: null
             });
 
-        expect(responseSupplier.status).toBe(201);
-        expect(responseSupplier.body).toHaveProperty('data');
-        createdSupplier = responseSupplier.body.data;
+        expect(responseCustomer.status).toBe(201);
+        expect(responseCustomer.body).toHaveProperty('data');
+        createdCustomer = responseCustomer.body.data;
     });
 
     afterAll(async () => {
         // Clean up resources, close connections, etc.
         // For example, you can delete the created admin user
+        await deleteCustomer(createdCustomer);
         await deleteAdmin(createdAdmin);
     });
 
@@ -97,71 +97,68 @@ describe('/supplier delete endpoint', () => {
         }
     }
 
-    it('should soft delete supplier with the valid data', async() => {
+    async function deleteCustomer(customer) {
+        if (customer) {
+            // Delete customer for testing
+            const responseDelete = await request(app)
+                .delete(`/v1/cms/customers/${customer.id}`)
+                .set('Authorization', `Bearer ${jwtToken}`);
+
+            expect(responseDelete.status).toBe(200);
+
+            const responseDeletePermanent = await request(app)
+                .delete(`/v1/cms/customers/${customer.id}/permanent`)
+                .set('Authorization', `Bearer ${jwtToken}`);
+
+            expect(responseDeletePermanent.status).toBe(200);
+        }
+    }
+
+    it('should login customer with the valid data', async () => {
         const response = await request(app)
-        .delete('/v1/cms/suppliers/' + createdSupplier.id)
-        .set('Authorization', `Bearer ${jwtToken}`);
+            .post('/v1/cms/customers/login')
+            .send({
+                email: createdCustomer.email,
+                password: process.env.TEST_CUSTOMER_PASSWORD
+            });
 
         expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty('data');
+
+        // Ensure the "data" object has the "token" property
+        expect(response.body.data).toHaveProperty('token');
     });
 
-    it('should return an error when no data exist or already deleted', async() => {
+    it('should return an error for incorrect email', async () => {
         const response = await request(app)
-            .delete('/v1/cms/suppliers/0')
-            .set('Authorization', `Bearer ${jwtToken}`);
+            .post('/v1/cms/customers/login')
+            .send({
+                email: "incorrect@example.com",
+                password: process.env.TEST_CUSTOMER_PASSWORD
+            });
 
         expect(response.status).toBe(404);
         expect(response.body).toHaveProperty('code', 'error');
-
-        const responseDeleted = await request(app)
-        .delete('/v1/cms/suppliers/' + createdSupplier.id)
-        .set('Authorization', `Bearer ${jwtToken}`);
-
-        expect(responseDeleted.status).toBe(404);
-        expect(responseDeleted.body).toHaveProperty('code', 'error');
     });
 
-    it('should return an error when no id in param', async () => {
+    it('should return an error for incorrect password', async () => {
         const response = await request(app)
-            .delete('/v1/cms/suppliers/')
-            .set('Authorization', `Bearer ${jwtToken}`);
-
-        expect(response.status).toBe(404);
-        expect(response.body).toHaveProperty('code', 'error');
-        expect(response.body).toHaveProperty('message', 'Invalid endpoint url');
-    });
-
-    it('should return an error when no authorization header', async () => {
-        const response = await request(app)
-            .delete('/v1/cms/suppliers/' + createdSupplier.id);
+            .post('/v1/cms/customers/login')
+            .send({
+                email: createdCustomer.email,
+                password: "incorrectpassword"
+            });
 
         expect(response.status).toBe(401);
         expect(response.body).toHaveProperty('code', 'error');
     });
 
-    it('should return an error with wrong or invalid authorization token', async () => {
+    it('should return an error for missing email or password', async() => {
         const response = await request(app)
-            .delete('/v1/cms/suppliers/' + createdSupplier.id)
-            .set('Authorization', `Bearer ${jwtToken + "x"}`);
+            .post('/v1/cms/customers/login')
+            .send({});
 
-        expect(response.status).toBe(403);
-        expect(response.body).toHaveProperty('code', 'error');
-    });
-
-    it('should delete supplier permanently', async() => {
-        const response = await request(app)
-            .delete('/v1/cms/suppliers/' + createdSupplier.id + '/permanent')
-            .set('Authorization', `Bearer ${jwtToken}`);
-
-        expect(response.status).toBe(200);
-    });
-
-    it('should return an error when delete supplier permanently but not exist', async() => {
-        const response = await request(app)
-            .delete('/v1/cms/suppliers/0/permanent')
-            .set('Authorization', `Bearer ${jwtToken}`);
-
-        expect(response.status).toBe(404);
+        expect(response.status).toBe(400);
         expect(response.body).toHaveProperty('code', 'error');
     });
 });

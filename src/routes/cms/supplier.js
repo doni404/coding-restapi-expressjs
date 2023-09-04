@@ -1,6 +1,6 @@
 import express from 'express';
 import * as controller from '../../controllers/supplier.js';
-import { authenticateTokenAdmin } from '../../middleware/auth.js';
+import { authenticateTokenAdmin } from '../../middlewares/auth.js';
 
 const router = express.Router();
 
