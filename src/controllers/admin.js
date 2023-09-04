@@ -22,7 +22,7 @@ export async function login(req, res) {
         let result = await model.findByEmail(db, email);
 
         if (result.length === 0) {
-            return res.status(401).send(responseWithoutData('error', 'Admin not found'));
+            return res.status(404).send(responseWithoutData('error', 'Admin not found'));
         }
 
         if (result[0].situation !== 'active' || result[0].deleted_at !== null) {
@@ -70,12 +70,12 @@ export async function createAdmin(req, res) {
         }
 
         // Create test admin data
-        const passwordEncrypt = bcrypt.hashSync(req.body.password, parseInt(process.env.SALTROUNDS));
-        req.body.password = passwordEncrypt;
+        const encryptedPassword = bcrypt.hashSync(req.body.password, parseInt(process.env.SALTROUNDS));
+        req.body.password = encryptedPassword;
 
         const registerDate = new Date();
 
-        // Get the admin id who delete this from token extraction
+        // Get the admin id who create this from token extraction
         // Path /create-test will set admin id null
         let adminWhoCreate = null;
         if (req.path === "/") {
@@ -167,8 +167,8 @@ export async function updateAdmin(req, res) {
         }
 
         // Create test admin data
-        const passwordEncrypt = bcrypt.hashSync(req.body.password, parseInt(process.env.SALTROUNDS));
-        req.body.password = passwordEncrypt;
+        const encryptedPassword = bcrypt.hashSync(req.body.password, parseInt(process.env.SALTROUNDS));
+        req.body.password = encryptedPassword;
 
         // Get the admin id who update this from token extraction
         let adminWhoUpdate = req.decoded.id;
@@ -226,7 +226,7 @@ export async function deleteAdminPermanent(req, res) {
         }
 
         await model.deleteAdminPermanent(db, id);
-        return res.status(200).send(responseWithoutData('success', 'Admin deleted permanently!'));
+        return res.status(200).send(responseWithoutData('success', 'Admin permanently deleted!'));
     } catch (error) {
         return res.status(500).send(responseWithoutData('error', 'something error'));
     }
@@ -263,8 +263,8 @@ export async function resetPassword(req, res) {
 
         // Update Password with Encrypt
         if (password) {
-            const passwordEncrypt = bcrypt.hashSync(password, parseInt(process.env.SALTROUNDS));
-            password = passwordEncrypt
+            const encryptedPassword = bcrypt.hashSync(password, parseInt(process.env.SALTROUNDS));
+            password = encryptedPassword;
         }
 
         // Prepare data for update
@@ -281,7 +281,7 @@ export async function resetPassword(req, res) {
             return res.status(200).send(responseWithoutData('success', 'Successfully updated admin password'))
         }
     } catch (error) {
-        return res.status(500).send(responseWithoutData('error', 'something error'))
+        return res.status(500).send(responseWithoutData('error', 'something error'));
     }
 }
 
@@ -297,37 +297,37 @@ export async function forgotPassword(req, res) {
         let checkAdmin = await model.findByEmailActive(db, email);
 
         if (checkAdmin.length === 0) {
-            return res.status(404).send(responseWithoutData('error', 'Admin not found!'))
+            return res.status(404).send(responseWithoutData('error', 'Admin not found!'));
         }
 
-        sendForgotPasswordEmail(checkAdmin[0])
-
-        return res.status(200).send(responseWithoutData("success", "Forgot password email sent !"))
+        sendForgotPasswordEmail(checkAdmin[0], res);
     } catch (error) {
         return res.status(500).send(responseWithoutData('error', 'something error'))
     }
 }
 
-async function sendForgotPasswordEmail(admin) {
+async function sendForgotPasswordEmail(admin, res) {
     const expiresIn = '2h'; // Token expiration time (e.g., 1 hour)
 
     // Generate and send JWT token
-    const token = jwt.sign({ id: admin.id, email: admin.email }, process.env.JWT_SECRET_CMS, { expiresIn })
+    const token = jwt.sign({ id: admin.id, email: admin.email }, process.env.JWT_SECRET_CMS, { expiresIn });
 
     // Generate url reset password
-    const urlResetPassword = process.env.BASE_URL_CMS + "/reset-password?token=" + token
+    const urlResetPassword = process.env.BASE_URL_CMS + "/reset-password?token=" + token;
 
     // Preparing subject and body email
-    const subjectEmail = "【important】CODING - Reset Admin Password"
-    const bodyEmail = helper.forgotPasswordEmail(urlResetPassword)
+    const subjectEmail = "【important】CODING - Reset Admin Password";
+    const bodyEmail = helper.forgotPasswordEmail(urlResetPassword);
 
     try {
-        return await helper.sendEmail(
+        await helper.sendEmail(
             admin.email,
             process.env.EMAIL_SENDER,  // Email alias 
             subjectEmail,
             bodyEmail
-        )
+        );
+
+        return res.status(200).send(responseWithoutData("success", "Forgot password email sent !"));
     } catch (error) {
         return res.status(500).send(responseWithoutData('error', 'something error'));
     }
