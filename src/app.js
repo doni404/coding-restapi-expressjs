@@ -10,6 +10,7 @@ import supplierCMS from './routes/cms/supplier.js';
 import supplierOrderCMS from './routes/cms/supplier_order.js';
 import customerCMS from './routes/cms/customer.js';
 import customerLoginLogCMS from './routes/cms/customer_login_log.js';
+import customerStoreCMS from './routes/cms/customer_store.js';
 
 // Defining the Express app
 const app = express();
@@ -36,6 +37,7 @@ app.use('/v1/cms/suppliers', supplierCMS);
 app.use('/v1/cms/supplier-orders', supplierOrderCMS);
 app.use('/v1/cms/customers', customerCMS);
 app.use('/v1/cms/customer-login-logs', customerLoginLogCMS);
+app.use('/v1/cms/customer-stores', customerStoreCMS);
 
 // 404 Not Found Middleware
 app.use((req, res, next) => {
