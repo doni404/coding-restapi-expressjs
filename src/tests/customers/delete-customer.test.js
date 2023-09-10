@@ -96,7 +96,7 @@ describe('/customer delete endpoint', () => {
         }
     }
 
-    it('should soft delete supplier with the valid data', async () => {
+    it('should soft delete customer with the valid data', async () => {
         const response = await request(app)
             .delete('/v1/cms/customers/' + createdCustomer.id)
             .set('Authorization', `Bearer ${jwtToken}`);
