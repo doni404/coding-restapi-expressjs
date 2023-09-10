@@ -6,11 +6,12 @@ import path from 'path';
 
 // Load environment variables from .env.test
 dotenv.config({ path: './.env.test' });
-const testKey = "delete-customer";
+const testKey = "delete-customer-store";
 
 describe('/customer delete endpoint', () => {
     let createdAdmin;
     let createdCustomer;
+    let createdCustomerStore;
     let jwtToken;
 
     beforeAll(async () => {
@@ -71,11 +72,34 @@ describe('/customer delete endpoint', () => {
         expect(responseCustomer.status).toBe(201);
         expect(responseCustomer.body).toHaveProperty('data');
         createdCustomer = responseCustomer.body.data;
+
+        // Create customer store test
+        const responseCStore = await request(app)
+            .post('/v1/cms/customer-stores')
+            .set('Authorization', `Bearer ${jwtToken}`)
+            .send({
+                customer_id: createdCustomer.id,
+                name: testKey + " Customer Store Test",
+                tel: "08123123123",
+                photo: imageBase64,
+                zip: "60111",
+                prefecture: "Jawa Barat",
+                city: "Sidomulyo",
+                address: "Jl. Adrenaline Test No 244",
+                situation: "active",
+                note: null
+            });
+
+        expect(responseCStore.status).toBe(201);
+        expect(responseCStore.body).toHaveProperty('data');
+        expect(responseCStore.body.data.photo).toBeDefined();
+        createdCustomerStore = responseCStore.body.data;
     });
 
     afterAll(async () => {
         // Clean up resources, close connections, etc.
         // For example, you can delete the created admin user
+        await deleteCustomer(createdCustomer);
         await deleteAdmin(createdAdmin);
     });
 
@@ -96,9 +120,26 @@ describe('/customer delete endpoint', () => {
         }
     }
 
-    it('should soft delete customer with the valid data', async () => {
+    async function deleteCustomer(customer) {
+        if (customer) {
+            // Delete customer for testing
+            const responseDelete = await request(app)
+                .delete(`/v1/cms/customers/${customer.id}`)
+                .set('Authorization', `Bearer ${jwtToken}`);
+
+            expect(responseDelete.status).toBe(200);
+
+            const responseDeletePermanent = await request(app)
+                .delete(`/v1/cms/customers/${customer.id}/permanent`)
+                .set('Authorization', `Bearer ${jwtToken}`);
+
+            expect(responseDeletePermanent.status).toBe(200);
+        }
+    }
+
+    it('should soft delete customer store with the valid data', async () => {
         const response = await request(app)
-            .delete('/v1/cms/customers/' + createdCustomer.id)
+            .delete('/v1/cms/customer-stores/' + createdCustomerStore.id)
             .set('Authorization', `Bearer ${jwtToken}`);
 
         expect(response.status).toBe(200);
@@ -106,14 +147,14 @@ describe('/customer delete endpoint', () => {
 
     it('should return an error when no data exist or already deleted', async () => {
         const response = await request(app)
-            .delete('/v1/cms/customers/0')
+            .delete('/v1/cms/customer-stores/0')
             .set('Authorization', `Bearer ${jwtToken}`);
 
         expect(response.status).toBe(404);
         expect(response.body).toHaveProperty('code', 'error');
 
         const responseDeleted = await request(app)
-            .delete('/v1/cms/customers/' + createdCustomer.id)
+            .delete('/v1/cms/customer-stores/' + createdCustomerStore.id)
             .set('Authorization', `Bearer ${jwtToken}`);
 
         expect(responseDeleted.status).toBe(404);
@@ -122,7 +163,7 @@ describe('/customer delete endpoint', () => {
 
     it('should return an error when no id in param', async () => {
         const response = await request(app)
-            .delete('/v1/cms/customers/')
+            .delete('/v1/cms/customer-stores/')
             .set('Authorization', `Bearer ${jwtToken}`);
 
         expect(response.status).toBe(404);
@@ -132,7 +173,7 @@ describe('/customer delete endpoint', () => {
 
     it('should return an error when no authorization header', async () => {
         const response = await request(app)
-            .delete('/v1/cms/customers/' + createdCustomer.id);
+            .delete('/v1/cms/customer-stores/' + createdCustomerStore.id);
 
         expect(response.status).toBe(401);
         expect(response.body).toHaveProperty('code', 'error');
@@ -140,7 +181,7 @@ describe('/customer delete endpoint', () => {
 
     it('should return an error with wrong or invalid authorization token', async () => {
         const response = await request(app)
-            .delete('/v1/cms/customers/' + createdCustomer.id)
+            .delete('/v1/cms/customer-stores/' + createdCustomerStore.id)
             .set('Authorization', `Bearer ${jwtToken + "x"}`);
 
         expect(response.status).toBe(403);
@@ -149,19 +190,18 @@ describe('/customer delete endpoint', () => {
 
     it('should delete customer permanently', async () => {
         const response = await request(app)
-            .delete('/v1/cms/customers/' + createdCustomer.id + '/permanent')
+            .delete('/v1/cms/customer-stores/' + createdCustomerStore.id + '/permanent')
             .set('Authorization', `Bearer ${jwtToken}`);
 
         expect(response.status).toBe(200);
     });
 
-    it('should return an error when delete customer permanently but not exist', async () => {
+    it('should return an error when delete customer store permanently but not exist', async () => {
         const response = await request(app)
-            .delete('/v1/cms/customers/0/permanent')
+            .delete('/v1/cms/customer-stores/0/permanent')
             .set('Authorization', `Bearer ${jwtToken}`);
 
         expect(response.status).toBe(404);
         expect(response.body).toHaveProperty('code', 'error');
     });
-
 });
