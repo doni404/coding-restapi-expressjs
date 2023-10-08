@@ -99,7 +99,7 @@ describe('/customer get list and by id endpoint', () => {
     it('should get all customers with the valid data', async () => {
         const response = await request(app)
             .get('/v1/cms/customers')
-            .set('Authorization', `Bearer ${jwtToken}`)
+            .set('Authorization', `Bearer ${jwtToken}`);
 
         expect(response.status).toBe(200);
         expect(response.body).toHaveProperty('data');
@@ -108,7 +108,7 @@ describe('/customer get list and by id endpoint', () => {
 
     it('should return an error with no authorization header (all customers)', async() => {
         const response = await request(app)
-            .get('/v1/cms/customers')
+            .get('/v1/cms/customers');
 
         expect(response.status).toBe(401);
         expect(response.body).toHaveProperty('code', 'error');
@@ -117,7 +117,7 @@ describe('/customer get list and by id endpoint', () => {
     it('should return an error with wrong or ivalid auth token (all customers)', async () => {
         const response = await request(app)
             .get('/v1/cms/customers')
-            .set('Authorization', `Bearer ${jwtToken}+"x"`)
+            .set('Authorization', `Bearer ${jwtToken + "x"}`);
 
         expect(response.status).toBe(403);
         expect(response.body).toHaveProperty('code', 'error');
@@ -127,7 +127,7 @@ describe('/customer get list and by id endpoint', () => {
         // Get supplier data by Id
         const response = await request(app)
             .get('/v1/cms/customers/' + createdCustomer.id)
-            .set('Authorization', `Bearer ${jwtToken}`)
+            .set('Authorization', `Bearer ${jwtToken}`);
 
         expect(response.status).toBe(200);
         expect(response.body).toHaveProperty('data');
@@ -136,7 +136,7 @@ describe('/customer get list and by id endpoint', () => {
     it('should return an error when param not id', async () => {
         const response = await request(app)
             .get('/v1/cms/customers/xxxx')
-            .set('Authorization', `Bearer ${jwtToken}`)
+            .set('Authorization', `Bearer ${jwtToken}`);
 
         expect(response.status).toBe(404);
         expect(response.body).toHaveProperty('code', 'error');
@@ -162,7 +162,7 @@ describe('/customer get list and by id endpoint', () => {
     it('should return an error when data doesn\'t exist', async () => {
         const response = await request(app)
             .get('/v1/cms/customers/xxx')
-            .set('Authorization', `Bearer ${jwtToken}`)
+            .set('Authorization', `Bearer ${jwtToken}`);
 
         expect(response.status).toBe(404);
         expect(response.body).toHaveProperty('code', 'error');
@@ -179,7 +179,7 @@ describe('/customer get list and by id endpoint', () => {
         // Get customer by ID
         const response = await request(app)
             .get('/v1/cms/customers/' + createdCustomer.id)
-            .set('Authorization', `Bearer ${jwtToken}`)
+            .set('Authorization', `Bearer ${jwtToken}`);
 
         expect(response.status).toBe(404);
         expect(response.body).toHaveProperty('code', 'error');
