@@ -1,10 +1,11 @@
 import dotenv from 'dotenv'
 import { transporterSMTP } from '../configs/smtp_client.js';
+import { responseWithoutData } from '../utils/helper_response.js';
 
 // Load environment variables from .env
 dotenv.config({ path: './.env' });
 
-export async function sendEmail(toAddress, fromAddress, subject, body) {
+export async function sendEmail(toAddress, fromAddress, subject, body, res) {
     const mailData = {
         from: fromAddress,  // sender address
         to: toAddress,   // list of receivers (but for now it owner email to get notice)

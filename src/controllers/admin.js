@@ -324,10 +324,9 @@ async function sendForgotPasswordEmail(admin, res) {
             admin.email,
             process.env.EMAIL_SENDER,  // Email alias 
             subjectEmail,
-            bodyEmail
+            bodyEmail,
+            res
         );
-
-        return res.status(200).send(responseWithoutData("success", "Forgot password email sent !"));
     } catch (error) {
         return res.status(500).send(responseWithoutData('error', 'something error'));
     }
