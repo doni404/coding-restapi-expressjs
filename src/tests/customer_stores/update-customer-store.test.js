@@ -46,7 +46,7 @@ describe('/customer-store update endpoint', () => {
 
         // Crate customer test
         // Load an image, convert to base64
-        const imagePath = path.join(__dirname, 'test-image.jpg'); // Assuming you have test-image.jpg in the same directory
+        const imagePath = path.join(__dirname, '../assets/test-image.jpg'); // Assuming you have test-image.jpg in the ../assets directory
         const imageBuffer = fs.readFileSync(imagePath);
         const imageBase64 = imageBuffer.toString('base64');
 
@@ -157,7 +157,7 @@ describe('/customer-store update endpoint', () => {
 
     it('should update customer store with the valid data', async () => {
         // Update the product also update the photo
-        const imagePath = path.join(__dirname, 'test-image.jpg'); // Assuming you have test-image.jpg in the same directory
+        const imagePath = path.join(__dirname, '../assets/test-image.jpg'); // Assuming you have test-image.jpg in the ../assets directory
         const imageBuffer = fs.readFileSync(imagePath);
         const imageBase64 = imageBuffer.toString('base64');
 

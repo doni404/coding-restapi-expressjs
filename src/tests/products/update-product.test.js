@@ -108,7 +108,7 @@ describe('/product update endpoint', () => {
 
     it('should update product with the valid data', async () => {
         // Update the product also update the photo
-        const imagePath = path.join(__dirname, 'test-image.jpg'); // Assuming you have test-image.jpg in the same directory
+        const imagePath = path.join(__dirname, '../assets/test-image.jpg'); // Assuming you have test-image.jpg in the ../assets directory
         const imageBuffer = fs.readFileSync(imagePath);
         const imageBase64 = imageBuffer.toString('base64');
 
