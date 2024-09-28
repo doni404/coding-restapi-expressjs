@@ -4,14 +4,14 @@ import dotenv from 'dotenv';
 
 // Load environment variables from .env.test
 dotenv.config({ path: './.env.test' });
-const testKey = "delete-customer-product-price";
+const testKey = "invoice-customer-order";
 
-describe('/customer-product-price delete', () => {
+describe('/customer-order generate invoice', () => {
     let createdAdmin;
     let createdProduct;
     let createdCustomer;
     let createdCustomerStore;
-    let createdCustomerProductPrice;
+    let createdCustomerOrder;
     let jwtToken;
 
     beforeAll(async () => {
@@ -45,11 +45,6 @@ describe('/customer-product-price delete', () => {
         jwtToken = responseLogin.body.data.token;
 
         // Crate customer test
-        // Load an image, convert to base64
-        // const imagePath = path.join(__dirname, '../assets/test-image.jpg'); // Assuming you have test-image.jpg in the ../assets directory
-        // const imageBuffer = fs.readFileSync(imagePath);
-        // const imageBase64 = imageBuffer.toString('base64');
-
         const responseCustomer = await request(app)
             .post('/v1/cms/customers')
             .set('Authorization', `Bearer ${jwtToken}`)
@@ -116,27 +111,45 @@ describe('/customer-product-price delete', () => {
         expect(responseProduct.body).toHaveProperty('data');
         createdProduct = responseProduct.body.data;
 
-        // Create customer product price
-        const responseCustomerProductPrice = await request(app)
-            .post('/v1/cms/customer-product-prices')
+        // Create customer order
+        const responseCustomerOrder = await request(app)
+            .post('/v1/cms/customer-orders')
             .set('Authorization', `Bearer ${jwtToken}`)
             .send({
                 customer_store_id: createdCustomerStore.id,
-                product_id: createdProduct.id,
-                price: 5000,
-                price_sale: 15000,
-                situation: "active",
-                note: null
+                price: 500000,
+                tax: 5000,
+                situation: "process",
+                store_name: createdCustomerStore.name,
+                store_zip: createdCustomerStore.zip,
+                store_prefecture: createdCustomerStore.prefecture,
+                store_address: createdCustomerStore.address,
+                payment_method: "transfer",
+                bank_name: "Bank Mandiri",
+                account_name: "William Daendals",
+                account_number: "1420022248958",
+                note: "note",
+                items: [
+                    {
+                        product_id: createdProduct.id,
+                        price: 5000,
+                        tax: 500,
+                        quantity: 10,
+                        type: "order"
+                    }
+                ]
             });
 
-        expect(responseCustomerProductPrice.status).toBe(201);
-        expect(responseCustomerProductPrice.body).toHaveProperty('data');
-        createdCustomerProductPrice = responseCustomerProductPrice.body.data;
+        expect(responseCustomerOrder.status).toBe(201);
+        expect(responseCustomerOrder.body).toHaveProperty('data');
+        expect(responseCustomerOrder.body.data).toHaveProperty('items');
+        createdCustomerOrder = responseCustomerOrder.body.data;
     });
 
     afterAll(async () => {
         // Clean up resources, close connections, etc.
         // For example, you can delete the created admin user
+        await deleteCustomerOrder(createdCustomerOrder);
         await deleteCustomerStore(createdCustomerStore);
         await deleteCustomer(createdCustomer);
         await deleteProduct(createdProduct);
@@ -211,71 +224,64 @@ describe('/customer-product-price delete', () => {
         }
     }
 
-    it('should soft delete customer product price with the valid data', async () => {
+    async function deleteCustomerOrder(customerOrder) {
+        if (customerOrder) {
+            // Delete customer order for testing
+            const responseDelete = await request(app)
+                .delete(`/v1/cms/customer-orders/${customerOrder.id}`)
+                .set('Authorization', `Bearer ${jwtToken}`);
+
+            expect(responseDelete.status).toBe(200);
+
+            const responseDeletePermanent = await request(app)
+                .delete(`/v1/cms/customer-orders/${customerOrder.id}/permanent`)
+                .set('Authorization', `Bearer ${jwtToken}`);
+
+            expect(responseDeletePermanent.status).toBe(200);
+        }
+    }
+
+    it('should generate the invoice with the valid data', async () => {
         const response = await request(app)
-            .delete('/v1/cms/customer-product-prices/' + createdCustomerProductPrice.id)
-            .set('Authorization', `Bearer ${jwtToken}`);
+            .post('/v1/cms/customer-orders/invoice-download')
+            .set('Authorization', `Bearer ${jwtToken}`)
+            .send({
+                customer_order_number: createdCustomerOrder.order_number
+            });
 
         expect(response.status).toBe(200);
     });
 
-    it('should return an error when no data exist or already deleted', async () => {
+    it('should return an error when sending request body', async () => {
         const response = await request(app)
-            .delete('/v1/cms/customer-product-prices/0')
-            .set('Authorization', `Bearer ${jwtToken}`);
+            .post('/v1/cms/customer-orders/invoice-download')
+            .set('Authorization', `Bearer ${jwtToken}`)
+            .send({});
 
-        expect(response.status).toBe(404);
+        expect(response.status).toBe(400);
         expect(response.body).toHaveProperty('code', 'error');
-
-        const responseDeleted = await request(app)
-            .delete('/v1/cms/customer-product-prices/' + createdCustomerProductPrice.id)
-            .set('Authorization', `Bearer ${jwtToken}`);
-
-        expect(responseDeleted.status).toBe(404);
-        expect(responseDeleted.body).toHaveProperty('code', 'error');
     });
 
-    it('should return an error when no id in param', async () => {
+    it('should return an error with no authorization header', async () => {
         const response = await request(app)
-            .delete('/v1/cms/customer-product-prices/')
-            .set('Authorization', `Bearer ${jwtToken}`);
-
-        expect(response.status).toBe(404);
-        expect(response.body).toHaveProperty('code', 'error');
-        expect(response.body).toHaveProperty('message', 'Invalid endpoint url');
-    });
-
-    it('should return an error when no authorization header', async () => {
-        const response = await request(app)
-            .delete('/v1/cms/customer-product-prices/' + createdCustomerProductPrice.id);
+            .post('/v1/cms/customer-orders/invoice-download')
+            .send({
+                customer_order_number: createdCustomerOrder.order_number
+            });
 
         expect(response.status).toBe(401);
         expect(response.body).toHaveProperty('code', 'error');
     });
 
-    it('should return an error with wrong or invalid authorization token', async () => {
+    it('should return an error with wrong or invalid auth token', async () => {
         const response = await request(app)
-            .delete('/v1/cms/customer-product-prices/' + createdCustomerProductPrice.id)
-            .set('Authorization', `Bearer ${jwtToken + "x"}`);
+            .post('/v1/cms/customer-orders/invoice-download')
+            .set('Authorization', `Bearer ${jwtToken + "x"}`)
+            .send({
+                customer_order_number: createdCustomerOrder.order_number
+            });
 
         expect(response.status).toBe(403);
-        expect(response.body).toHaveProperty('code', 'error');
-    });
-
-    it('should delete customer product price permanently', async () => {
-        const response = await request(app)
-            .delete('/v1/cms/customer-product-prices/' + createdCustomerProductPrice.id + '/permanent')
-            .set('Authorization', `Bearer ${jwtToken}`);
-
-        expect(response.status).toBe(200);
-    });
-
-    it('should return an error when delete customer product price permanently but not exist', async () => {
-        const response = await request(app)
-            .delete('/v1/cms/customer-product-prices/0/permanent')
-            .set('Authorization', `Bearer ${jwtToken}`);
-
-        expect(response.status).toBe(404);
         expect(response.body).toHaveProperty('code', 'error');
     });
 });
