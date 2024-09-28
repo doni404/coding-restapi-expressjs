@@ -391,7 +391,7 @@ export async function updateSupplierOrder(req, res) {
             delete data['items'];
         }
 
-        // Prepare to create the all order items first then create the order (using transaction)
+        // Prepare to update the all order items (using transaction)
         let orderItems = req.body.items;
         let orderItemResponses = [];
 
@@ -483,7 +483,6 @@ export async function deleteSupplierOrder(req, res) {
 
         let data = {
             id: supplierOrderId,
-            situation: 'inactive',
             admin_deleted_id: adminWhoDelete,
             deleted_at: new Date()
         }
