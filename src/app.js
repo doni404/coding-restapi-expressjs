@@ -29,6 +29,12 @@ app.get('/', (req, res) => {
     res.send('CODING API v1');
 });
 
+// Declaring robots.txt for production and development environment
+app.get('/robots.txt', function (req, res) {
+    res.type('text/plain')
+    res.send("User-agent: *\nDisallow: /")
+})
+
 // v1 cms
 app.use('/v1/cms/admins', adminCMS);
 app.use('/v1/cms/admin-login-logs', adminLoginLogCMS);
