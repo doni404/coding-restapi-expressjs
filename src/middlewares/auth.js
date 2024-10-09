@@ -1,5 +1,4 @@
 import jwt from 'jsonwebtoken'
-
 import dotenv from 'dotenv'
 import { responseWithoutData } from '../utils/helper_response.js'
 

@@ -1,5 +1,5 @@
 import * as model from '../models/customer_login_log.js';
-import db from '../configs/db.js';
+import db from '../configs/dbClient.js';
 import { response, responseWithoutData } from '../utils/helper_response.js';
 
 export async function getLogsByCustomerId(req, res) {

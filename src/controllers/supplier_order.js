@@ -3,7 +3,7 @@ import * as modelItem from '../models/supplier_order_item.js';
 import * as modelSupplier from '../models/supplier.js';
 import * as modelProduct from '../models/product.js';
 import * as modelProductStockLog from '../models/product_stock_log.js';
-import db from '../configs/db.js';
+import db from '../configs/dbClient.js';
 import dotenv from 'dotenv';
 import { response, responseWithoutData } from '../utils/helper_response.js';
 import { getPaginationParams } from '../utils/helper_query.js';

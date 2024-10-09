@@ -1,5 +1,5 @@
 import * as model from '../models/admin.js';
-import db from '../configs/db.js';
+import db from '../configs/dbClient.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
