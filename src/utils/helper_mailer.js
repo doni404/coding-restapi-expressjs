@@ -1,5 +1,5 @@
 import dotenv from 'dotenv'
-import { transporterSMTP } from '../configs/smtp_client.js';
+import { transporterSMTP } from '../configs/smtpClient.js';
 
 // Load environment variables from .env
 dotenv.config({ path: './.env' });
