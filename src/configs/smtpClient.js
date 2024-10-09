@@ -3,9 +3,12 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Service load here if needed
-// create reusable transporter object using the default SMTP transport
-const transporterSMTP = nodemailer.createTransport({
+/* 
+This module sets up an SMTP client using the nodemailer library and configuration 
+from environment variables. It exports the configured smtpClient for sending emails.
+*/
+
+const smtpClient = nodemailer.createTransport({
     port: process.env.SMTP_SERVICE_PORT,               // true for 465, false for other ports
     host: process.env.SMTP_SERVICE_HOST,
     auth: {
@@ -15,4 +18,4 @@ const transporterSMTP = nodemailer.createTransport({
     secure: true,
 });
 
-export { transporterSMTP };
+export { smtpClient };
