@@ -8,7 +8,7 @@ import dotenv from 'dotenv';
 import { response, responseWithoutData } from '../utils/helper_response.js';
 import { getPaginationParams } from '../utils/helper_query.js';
 import dayjs from 'dayjs'
-import { randomString } from '../utils/helper_string.js'
+// import { randomString } from '../utils/helper_string.js'
 
 // Load environment variables from .env
 dotenv.config({ path: './.env' });
