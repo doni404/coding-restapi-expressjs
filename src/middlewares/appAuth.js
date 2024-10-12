@@ -12,14 +12,13 @@ export function authenticateTokenAdmin(req, res, next) {
         return res.status(401).send(responseWithoutData('error', 'Unauthorized'))
     }
 
-    try {
-        const decodedToken = jwt.verify(token, process.env.JWT_SECRET_CMS);
-        req.decoded = decodedToken;
-        next();
-    } catch (error) {
-        return res.status(403).send(responseWithoutData('error', 'Forbidden'))
-    }
-
+    jwt.verify(token, process.env.JWT_SECRET_CMS, (err, user) => {
+        if (err) {
+            return res.status(403).send(responseWithoutData('error', 'Forbidden'))
+        }
+        req.user = user
+        next()
+    });
 }
 
 export function authenticateTokenCustomer(req, res, next) {
@@ -30,12 +29,11 @@ export function authenticateTokenCustomer(req, res, next) {
         return res.status(401).send(responseWithoutData('error', 'Unauthorized'))
     }
 
-    try {
-        const decodedToken = jwt.verify(token, process.env.JWT_SECRET_CUSTOMER);
-        req.decoded = decodedToken;
-        next();
-    } catch (error) {
-        return res.status(403).send(responseWithoutData('error', 'Forbidden'))
-    }
-
+    jwt.verify(token, process.env.JWT_SECRET_CUSTOMER, (err, user) => {
+        if (err) {
+            return res.status(403).send(responseWithoutData('error', 'Forbidden'))
+        }
+        req.user = user
+        next()
+    });
 }
