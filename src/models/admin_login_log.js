@@ -1,38 +1,33 @@
-export function findByAdminId(db, adminId) {
+import { queryParamGenerator } from '../utils/helper_model.js';
+
+export function getAdminLoginLogsById(db, id) {
     return new Promise((resolve, reject) => {
-        db.query("SELECT * FROM admin_login_logs WHERE admin_id = ?", [adminId], function (error, results, fields) {
-            if (error) {
-                reject(error);
+        db.query("SELECT * FROM admin_login_logs WHERE id = ?", id, function (err, result, fields) {
+            if (err) {
+                reject(err);
             }
-            resolve(results);
-        })
+            resolve(result);
+        });
     });
 }
 
-export function findById(db, id) {
+export function getAdminLoginLogsByAdminId(db, adminId, queryParams) {
     return new Promise((resolve, reject) => {
-        db.query("SELECT * FROM admin_login_logs WHERE id = ?", [id], function (error, results, fields) {
-            if (error) {
-                reject(error);
+        db.query("SELECT * FROM admin_login_logs WHERE admin_id = ? " + queryParamGenerator(queryParams), adminId, function (err, result, fields) {
+            if (err) {
+                reject(err);
             }
-            resolve(results);
-        })
+            resolve(result);
+        });
     });
 }
 
-export function createAdminLoginLogs(db, data) {
+export function createAdminLoginLog(db, data) {
     return new Promise((resolve, reject) => {
-        db.query("INSERT INTO admin_login_logs SET ?", [data], async function (error, result, fields) {
-            if (error) {
-                reject(error);
+        db.query("INSERT INTO admin_login_logs SET ?", data, function (err, result, fields) {
+            if (err) {
+                reject(err);
             }
-
-            // Get last inserted data to return
-            let insertedData = await findById(db, result.insertId);
-            if (insertedData.length !== 0) {
-                resolve(insertedData);
-            }
-
             resolve(result);
         });
     });
