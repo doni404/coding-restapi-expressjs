@@ -16,6 +16,6 @@ const smtpClient = nodemailer.createTransport({
         pass: process.env.SMTP_USER_PASSWORD,
     },
     secure: true,
-});
+}); 
 
 export { smtpClient };
