@@ -2,19 +2,22 @@
 export function queryParamGenerator(params, prefix = '') {
     let customQuery = "";
 
-    // Check sort
-    if (params.sort_by != null && params.sort_by.split(".").length == 2) {
-        customQuery += "ORDER BY " + (prefix !== '' ? `${prefix}.` : '') + params.sort_by.split(".")[0] + " " + params.sort_by.split(".")[1].toUpperCase() + " ";
-    }
+    // Check if params is not null or undefined
+    if (params) {
+        // Check sort
+        if (params.sort_by != null && params.sort_by.split(".").length == 2) {
+            customQuery += "ORDER BY " + (prefix !== '' ? `${prefix}.` : '') + params.sort_by.split(".")[0] + " " + params.sort_by.split(".")[1].toUpperCase() + " ";
+        }
 
-    // Check limit
-    if (params.limit != null) {
-        customQuery += "LIMIT " + params.limit + " ";
-    }
+        // Check limit
+        if (params.limit != null) {
+            customQuery += "LIMIT " + params.limit + " ";
+        }
 
-    // Check offset
-    if (params.offset != null) {
-        customQuery += "OFFSET " + params.offset + " ";
+        // Check offset
+        if (params.offset != null) {
+            customQuery += "OFFSET " + params.offset + " ";
+        }
     }
 
     return customQuery;
