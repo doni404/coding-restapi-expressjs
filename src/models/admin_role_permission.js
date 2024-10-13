@@ -44,10 +44,17 @@ export function checkAdminRolePermissionExist(db, data) {
 
 export function createAdminRolePermission(db, data) {
     return new Promise((resolve, reject) => {
-        db.query('INSERT INTO admin_role_permissions SET ?', data, function (err, result, fields) {
+        db.query('INSERT INTO admin_role_permissions SET ?', data, async function (err, result, fields) {
             if (err) {
                 reject(err);
             }
+
+            // Get last inserted data to return
+            let insertedData = await getAdminRolePermissionById(db, result.insertId);
+            if (insertedData.length !== 0) {
+                resolve(insertedData);
+            }
+
             resolve(result);
         });
     });

@@ -35,10 +35,17 @@ export function getAdminRoleDeleted(db, id) {
 
 export function createAdminRole(db, data) {
     return new Promise((resolve, reject) => {
-        db.query('INSERT INTO admin_roles SET ?', data, function (err, result, fields) {
+        db.query('INSERT INTO admin_roles SET ?', data, async function (err, result, fields) {
             if (err) {
                 reject(err);
             }
+
+            // Get last inserted data to return
+            let insertedData = await getAdminRoleById(db, result.insertId);
+            if (insertedData.length !== 0) {
+                resolve(insertedData);
+            }
+
             resolve(result);
         });
     });
@@ -46,10 +53,17 @@ export function createAdminRole(db, data) {
 
 export function updateAdminRole(db, data) {
     return new Promise((resolve, reject) => {
-        db.query('UPDATE admin_roles SET ? WHERE id = ?', [data, data.id], function (err, result, fields) {
+        db.query('UPDATE admin_roles SET ? WHERE id = ?', [data, data.id], async function (err, result, fields) {
             if (err) {
                 reject(err);
             }
+
+            // Get last updated data to return
+            let updatedData = await getAdminRoleById(db, data.id);
+            if (updatedData.length !== 0) {
+                resolve(updatedData);
+            }
+
             resolve(result);
         });
     });
@@ -57,10 +71,17 @@ export function updateAdminRole(db, data) {
 
 export function deleteAdminRole(db, data) {
     return new Promise((resolve, reject) => {
-        db.query('UPDATE admin_roles SET ? WHERE id = ?', [data, data.id], function (err, result, fields) {
+        db.query('UPDATE admin_roles SET ? WHERE id = ?', [data, data.id], async function (err, result, fields) {
             if (err) {
                 reject(err);
             }
+
+            // Get last deleted data to return
+            let deletedData = await getAdminRoleDeleted(db, data.id);
+            if (deletedData.length !== 0) {
+                resolve(deletedData);
+            }
+
             resolve(result);
         });
     });

@@ -2,6 +2,7 @@ import db from '../configs/dbClient.js';
 import * as model from '../models/admin_role.js';
 import * as modelAdminPermission from '../models/admin_permission.js';
 import * as modelAdminRolePermission from '../models/admin_role_permission.js';
+import * as helperString from '../utils/helper_string.js';
 import { response, responseWithoutData } from '../utils/helper_response.js';
 
 export async function getAllAdminRoles(req, res) {
@@ -13,17 +14,17 @@ export async function getAllAdminRoles(req, res) {
             return res.send(response('success', 'Admin roles data is not found!', []));
         }
 
-        let result = [];
+        let results = [];
         for (let adminRole of adminRoles) {
             let adminPermissionList = await getAdminPermissionList(adminRole.id);
             adminRole = {
                 ...adminRole,
                 admin_permissions: adminPermissionList
             };
-            result.push(adminRole);
+            results.push(adminRole);
         }
 
-        return res.send(response('success', 'Show admin roles list', result));
+        return res.send(response('success', 'Successfully get admin roles', results));
     } catch (error) {
         console.log("🚀 ~ getAllAdminRoles ~ error:", error);
         return res.status(500).send(responseWithoutData('error', 'something error'));
@@ -37,8 +38,9 @@ export async function getAdminRoleById(req, res) {
         let id = params.id;
 
         let result = await model.getAdminRoleById(db, id);
+        console.log("🚀 ~ getAdminRoleById ~ result:", result);
         if (result.length === 0) {
-            return res.send(404).send(responseWithoutData('error', 'Admin role data is not found!'));
+            return res.status(404).send(responseWithoutData('error', 'Admin role is not found!'));
         }
 
         result = result[0];
@@ -47,7 +49,7 @@ export async function getAdminRoleById(req, res) {
             ...result,
             admin_permissions: adminPermissionList
         };
-        return res.send(response('success', 'Get admin role by id', result));
+        return res.send(response('success', 'Successfully admin role by id', result));
     } catch (error) {
         console.log("🚀 ~ getAdminRoleById ~ error:", error);
         return res.status(500).send(responseWithoutData('error', 'something error'));
@@ -58,20 +60,26 @@ export async function createAdminRole(req, res) {
     let { body } = req;
 
     try {
-        let adminPermissions;
-        if (body.admin_permissions) {
-            adminPermissions = body.admin_permissions;
-            delete body.admin_permissions;
+        let adminRoleData = body;
+
+        // Check the body, contains 'name', 'admin_permissions' keys
+        if (!helperString.containsRequiredKeys(adminRoleData, ['name', 'admin_permissions'])) {
+            return res.status(400).send(responseWithoutData('error', 'Bad Request: name, admin_permissions are required'));
         }
 
-        body = {
-            ...body,
+        let adminPermissions;
+        if (adminRoleData.admin_permissions) {
+            adminPermissions = adminRoleData.admin_permissions;
+            delete adminRoleData.admin_permissions;
+        }
+
+        adminRoleData = {
+            ...adminRoleData,
             created_at: new Date(),
             updated_at: new Date()
         };
 
-        let insertResult = await model.insertAdminRole(db, body);
-        let result = await model.getAdminRoleById(db, insertResult.insertId);
+        let result = await model.createAdminRole(db, adminRoleData);
         result = result[0];
 
         let admin_permissions = [];
@@ -84,18 +92,17 @@ export async function createAdminRole(req, res) {
                 let checkAdminPermissionData = await modelAdminPermission.getAdminPermissionById(db, permissionId);
                 if (checkAdminPermissionData.length !== 0) {
                     // Check role permission is already exist?
-                    let checkAdminRolePermissionData = await modelAdminRolePermission.checkAdminRolePermissionExist(db, { roleId: insertResult.id, permissionId: permissionId });
+                    let checkAdminRolePermissionData = await modelAdminRolePermission.checkAdminRolePermissionExist(db, { roleId: result.id, permissionId: permissionId });
                     if (checkAdminRolePermissionData.length === 0) {
                         let rolePermissionData = {
-                            admin_role_id: insertResult.insertId,
+                            admin_role_id: result.id,
                             admin_permission_id: permissionId,
                             created_at: createdDate
                         };
 
-                        let insertResultRolePermission = await modelAdminRolePermission.insertAdminRolePermission(db, rolePermissionData);
-                        let rolePermission = await modelAdminRolePermission.getAdminRolePermissionById(db, insertResultRolePermission.insertId);
-                        if (rolePermission.length !== 0) {
-                            admin_permissions.push(rolePermission);
+                        let resultRolePermission = await modelAdminRolePermission.createAdminRolePermission(db, rolePermissionData);
+                        if (resultRolePermission.length !== 0) {
+                            admin_permissions.push(resultRolePermission);
                         }
                     }
                 }
@@ -120,11 +127,17 @@ export async function updateAdminRole(req, res) {
 
     try {
         let id = params.id;
+        let adminRoleData = body;
+
+        // Check the body, contains 'name', 'admin_permissions' keys
+        if (!helperString.containsRequiredKeys(adminRoleData, ['name', 'admin_permissions'])) {
+            return res.status(400).send(responseWithoutData('error', 'Bad Request: name, admin_permissions are required'));
+        }
 
         let adminPermissionsUpdate;
-        if (body.admin_permissions) {
-            adminPermissionsUpdate = body.admin_permissions;
-            delete body.admin_permissions;
+        if (adminRoleData.admin_permissions) {
+            adminPermissionsUpdate = adminRoleData.admin_permissions;
+            delete adminRoleData.admin_permissions;
         }
 
         let currentAdminPermissions = await modelAdminRolePermission.getPermissionIdListByRoleId(db, id);
@@ -135,9 +148,9 @@ export async function updateAdminRole(req, res) {
         // console.log('Delete Admin Permission : ', deletedAdminPermission);
         // console.log('Update admin permission : ', updatedAdminPermission);
 
-        let data = {
+        adminRoleData = {
             id: id,
-            ...body,
+            ...adminRoleData,
             updated_at: new Date()
         };
 
@@ -146,7 +159,7 @@ export async function updateAdminRole(req, res) {
             return res.status(404).send(responseWithoutData('error', 'Admin role not found!'));
         }
 
-        await model.updateAdminRole(db, data);
+        let updatedAdminRole = await model.updateAdminRole(db, adminRoleData);
 
         // Update Role Permission
         if (deletedAdminPermission.length !== 0) {
@@ -173,21 +186,20 @@ export async function updateAdminRole(req, res) {
                             created_at: createdDate
                         };
 
-                        await modelAdminRolePermission.insertAdminRolePermission(db, rolePermissionData);
+                        await modelAdminRolePermission.createAdminRolePermission(db, rolePermissionData);
                     }
                 }
             }
         }
 
-        let result = await model.getAdminRoleById(db, id);
-        result = result[0];
+        updatedAdminRole = updatedAdminRole[0];
         let adminRolePermissions = await modelAdminRolePermission.getAdminRolePermissionByRoleId(db, id);
-        result = {
-            ...result,
+        updatedAdminRole = {
+            ...updatedAdminRole,
             admin_permissions: adminRolePermissions
         };
 
-        return res.send(response('success', 'Admin role updated', result));
+        return res.send(response('success', 'Admin role updated', updatedAdminRole));
     } catch (error) {
         console.log("🚀 ~ updateAdminRole ~ error:", error);
         return res.status(500).send(responseWithoutData('error', 'something error'));
@@ -206,11 +218,11 @@ export async function deleteAdminRole(req, res) {
 
         let currentData = await model.getAdminRoleById(db, id);
         if (currentData.length === 0) {
-            return res.status(404).send('error', 'Admin role not found!');
+            return res.status(404).send(responseWithoutData('error', 'Admin role not found!'));
         }
 
-        await model.deleteAdminRole(db, data);
-        return res.send(responseWithoutData('success', 'Admin role successfully deleted!'));
+        let result = await model.deleteAdminRole(db, data);
+        return res.send(response('success', 'Admin role successfully deleted!', result[0]));
     } catch (error) {
         console.log("🚀 ~ deleteAdminRole ~ error:", error);
         return res.status(500).send(responseWithoutData('error', 'something error'));
