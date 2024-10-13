@@ -4,7 +4,7 @@ import { authenticateTokenAdmin } from '../../middlewares/appAuth.js';
 
 const router = express.Router();
 
-router.post('/', authenticateTokenAdmin, controller.createLogs);
-router.get('/admins/:adminId', authenticateTokenAdmin, controller.getLogsByAdminId);
+router.post('/', authenticateTokenAdmin, controller.createAdminLoginLog);
+router.get('/admins/:id', authenticateTokenAdmin, controller.getAdminLoginLogsByAdminId);
 
 export default router;
