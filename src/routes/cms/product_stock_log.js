@@ -1,6 +1,6 @@
 import express from 'express';
 import * as controller from '../../controllers/product_stock_log.js';
-import { authenticateTokenAdmin } from '../../middlewares/auth.js';
+import { authenticateTokenAdmin } from '../../middlewares/appAuth.js';
 
 const router = express.Router();
 

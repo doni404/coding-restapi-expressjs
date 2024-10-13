@@ -1,37 +1,57 @@
-import * as model from '../models/admin_login_log.js';
-import db from '../configs/db.js';
-import { response, responseWithoutData } from '../utils/helper_response.js';
+import db from '../configs/dbClient.js'
+import * as model from '../models/admin_login_log.js'
+import * as helperString from '../utils/helper_string.js'
+import { response, responseWithoutData } from '../utils/helper_response.js'
+import { getClientUserAgent } from '../utils/helper_log.js'
 
-export async function getLogsByAdminId(req, res) {
-    const adminId = req.params.adminId;
+export async function getAdminLoginLogsByAdminId(req, res) {
+    let { params, query } = req
 
     try {
-        // Get the admin login logs by admin id
-        let adminLogs = await model.findByAdminId(db, adminId);
+        let id = params.id
 
-        return res.status(200).send(response('success', 'Successfully get admin login logs', adminLogs));
+        let result = await model.getAdminLoginLogsByAdminId(db, id, query)
+        if (result.length === 0) {
+            return res.send(response('success', 'Admin login log is not found!', []))
+        }
+        return res.send(response('success', 'Get admin login logs by admin id', result))
     } catch (error) {
-        return res.status(500).send(responseWithoutData('error', 'something error'));
+        console.log("🚀 ~ getAdminLoginLogsByAdminId ~ error:", error)
+        return res.status(500).send(responseWithoutData('error', 'something error'))
     }
 }
 
-export async function createLogs(req, res) {
-    const { admin_id, ip_address, platform, browser, os, city } = req.body;
-
-    if (!admin_id || !ip_address) {
-        return res.status(400).send(responseWithoutData('error', 'Invalid request body'));
-    }
+export async function createAdminLoginLog(req, res) {
+    let { body } = req
 
     try {
-        let data = {
-            ...req.body,
-            created_at: new Date()
+        // Check body, should contains 'student_id'
+        if (!helperString.containsRequiredKeys(body, ['admin_id'])) {
+            return res.status(400).send(responseWithoutData('error', 'Bad Request: student_id is required'))
         }
 
-        let createdData = await model.createAdminLoginLogs(db, data);
+        let additionalInfo = {}
 
-        return res.status(201).send(response('success', 'Admin login log successfully created!', createdData[0]));
-    } catch(error) {
-        return res.status(500).send(responseWithoutData('error', 'something error'));
+        let clientUserAgent = await getClientUserAgent(req)
+        if (clientUserAgent) {
+            additionalInfo.ip_address = clientUserAgent.ip
+            additionalInfo.browser = clientUserAgent.browser
+            additionalInfo.os = clientUserAgent.os
+            additionalInfo.platform = clientUserAgent.device === 'Other' ? 'pc' : 'mobile'
+            additionalInfo.country = clientUserAgent.country
+        }
+
+        let data = {
+            admin_id: body.admin_id,
+            ...additionalInfo,
+            created_at: new Date(),
+        }
+
+        let insertResult = await model.createAdminLoginLog(db, data)
+        let result = await model.getAdminLoginLogsById(db, insertResult.insertId)
+        return res.status(201).send(response('succes', 'Admin login log successfully created!', result[0]))
+    } catch (error) {
+        console.log("🚀 ~ createAdminLoginLog ~ error:", error)
+        return res.status(500).send(responseWithoutData('error', 'something error'))
     }
 }

@@ -1,6 +1,8 @@
-export function findAll(db, params) {
+import { queryParamGenerator } from '../utils/helper_model.js';
+
+export function getAllAdmins(db, queryParams) {
     return new Promise((resolve, reject) => {
-        db.query("SELECT * FROM admins WHERE deleted_at IS NULL ORDER BY ? LIMIT ? OFFSET ?", [params.sort.field + " " + params.sort.direction, params.limit, params.offset], function(error, results, fields) {
+        db.query("SELECT * FROM admins WHERE deleted_at IS NULL " + queryParamGenerator(queryParams), function(error, results, fields) {
             if (error) {
                 reject(error);
             }
@@ -9,7 +11,7 @@ export function findAll(db, params) {
     });
 }
 
-export function findTotalCount(db) {
+export function getTotalCount(db) {
     return new Promise((resolve, reject) => {
         db.query("SELECT count(id) as total FROM admins WHERE deleted_at IS NULL", function(error, results, fields) {
             if (error) {
@@ -20,9 +22,9 @@ export function findTotalCount(db) {
     });
 }
 
-export function findByEmail(db, email) {
+export function getAdminByEmail(db, email) {
     return new Promise((resolve, reject) => {
-        db.query("SELECT * FROM admins WHERE email = ?", [email], function (error, results, fields) {
+        db.query("SELECT * FROM admins WHERE email = ? AND deleted_at IS NULL", [email], function (error, results, fields) {
             if (error) {
                 console.error('MySQL query error: ', error);
                 reject(error);
@@ -32,7 +34,7 @@ export function findByEmail(db, email) {
     });
 }
 
-export function findByEmailActive(db, email) {
+export function getAdminByEmailActive(db, email) {
     return new Promise((resolve, reject) => {
         db.query("SELECT * FROM admins WHERE email = ? AND situation = ? AND deleted_at IS NULL", [email, 'active'], function (error, results, fields) {
             if (error) {
@@ -44,25 +46,25 @@ export function findByEmailActive(db, email) {
     });
 }
 
-export function findById(db, id) {
+export function getAdminById(db, id) {
     return new Promise((resolve, reject) => {
         db.query("SELECT * FROM admins WHERE id = ? AND deleted_at IS NULL", [id], function (error, results, fields) {
             if (error) {
                 reject(error);
             }
             resolve(results);
-        })
+        });
     });
 }
 
-export function findDeletedById(db, id) {
+export function getAdminDeletedById(db, id) {
     return new Promise((resolve, reject) => {
         db.query("SELECT * FROM admins WHERE id = ? AND deleted_at IS NOT NULL", [id], function (error, results, fields) {
             if (error) {
                 reject(error);
             }
             resolve(results);
-        })
+        });
     });
 }
 
@@ -74,7 +76,7 @@ export function createAdmin(db, data) {
             }
 
             // Get last inserted data to return
-            let insertedData = await findById(db, result.insertId);
+            let insertedData = await getAdminById(db, result.insertId);
             if (insertedData.length !== 0) {
                 resolve(insertedData);
             }
@@ -92,7 +94,7 @@ export function updateAdmin(db, data) {
             }
 
             // Get last updated data to return
-            let updatedData = await findById(db, data.id);
+            let updatedData = await getAdminById(db, data.id);
             if (updatedData.length !== 0) {
                 resolve(updatedData);
             }
@@ -110,7 +112,7 @@ export function deleteAdmin(db, data) {
             }
 
             // Get last deleted data to return
-            let deletedData = await findDeletedById(db, data.id);
+            let deletedData = await getAdminDeletedById(db, data.id);
             if (deletedData.length !== 0) {
                 resolve(deletedData);
             }
@@ -129,4 +131,15 @@ export function deleteAdminPermanent(db, id) {
             resolve(results);
         });
     });
+}
+
+export function getEmailAvailability(db, data) {
+    return new Promise((resolve, reject) => {
+        db.query("SELECT * FROM admins WHERE email = ? AND id != ? AND deleted_at IS NULL", [data.email, data.id], function (err, result, fields) {
+            if (err) {
+                reject(err)
+            }
+            resolve(result)
+        })
+    })
 }

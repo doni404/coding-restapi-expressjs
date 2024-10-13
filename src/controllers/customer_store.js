@@ -1,6 +1,6 @@
 import * as model from '../models/customer_store.js';
 import * as modelCustomer from '../models/customer.js';
-import db from '../configs/db.js';
+import db from '../configs/dbClient.js';
 import dotenv from 'dotenv';
 import { response, responseWithoutData } from '../utils/helper_response.js';
 import { getPaginationParams } from '../utils/helper_query.js';
