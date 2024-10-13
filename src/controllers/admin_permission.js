@@ -46,8 +46,7 @@ export async function createAdminPermission(req, res) {
             created_at: new Date()
         };
 
-        let insertResult = await model.createAdminPermission(db, body);
-        let result = await model.getAdminPermissionById(db, insertResult.insertId);
+        let result = await model.createAdminPermission(db, body);
         return res.status(201).send(response('success', 'Admin permission created', result[0]));
     } catch (error) {
         console.log("🚀 ~ createAdminPermission ~ error:", error);
@@ -65,7 +64,7 @@ export async function deleteAdminPermission(req, res) {
         }
 
         await model.deleteAdminPermission(db, params.id);
-        return res.send(responseWithoutData('success', 'Admin permission successfull deleted permanently!'));
+        return res.send(responseWithoutData('success', 'Admin permission permanently deleted!'));
     } catch (error) {
         console.log("🚀 ~ deleteAdminPermission ~ error:", error);
         return res.status(500).send(responseWithoutData('error', 'something error'));
