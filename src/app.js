@@ -9,12 +9,13 @@ import adminRoleCms from './routes/cms/admin_role.js'
 
 import productCMS from './routes/cms/product.js';
 import productStockLogCMS from './routes/cms/product_stock_log.js';
-import supplierCMS from './routes/cms/supplier.js';
-import supplierOrderCMS from './routes/cms/supplier_order.js';
+
 import customerCMS from './routes/cms/customer.js';
 import customerLoginLogCMS from './routes/cms/customer_login_log.js';
 import customerStoreCMS from './routes/cms/customer_store.js';
 import customerProductPriceCMS from './routes/cms/customer_product_price.js';
+import supplierCMS from './routes/cms/supplier.js';
+import supplierOrderCMS from './routes/cms/supplier_order.js';
 
 // Defining the Express app
 const app = express();
@@ -34,15 +35,15 @@ app.get('/', (req, res) => {
 
 // Declaring robots.txt for production and development environment
 app.get('/robots.txt', function (req, res) {
-    res.type('text/plain')
-    res.send("User-agent: *\nDisallow: /")
-})
+    res.type('text/plain');
+    res.send("User-agent: *\nDisallow: /");
+});
 
 // v1 cms
 app.use('/v1/cms/admins', adminCMS);
 app.use('/v1/cms/admin-login-logs', adminLoginLogCMS);
-app.use('/v1/cms/admin-permissions', adminPermissionCms)
-app.use('/v1/cms/admin-roles', adminRoleCms)
+app.use('/v1/cms/admin-permissions', adminPermissionCms);
+app.use('/v1/cms/admin-roles', adminRoleCms);
 // app.use('/v1/cms/products', productCMS);
 // app.use('/v1/cms/product-stock-logs', productStockLogCMS);
 // app.use('/v1/cms/suppliers', supplierCMS);
