@@ -1,6 +1,8 @@
-export function getAllStockLogs(db, params) {
+import { queryParamGenerator } from '../utils/helper_model.js';
+
+export function getAllStockLogs(db, queryParams) {
     return new Promise((resolve, reject) => {
-        db.query("SELECT * FROM product_stock_logs ORDER BY ? LIMIT ? OFFSET ?", [params.sort.filed + " " + params.sort.direction, params.limit, params.offset], function(error, results, fields) {
+        db.query(`SELECT * FROM product_stock_logs ` + queryParamGenerator(queryParams), function(error, results, fields) {
             if (error) {
                 reject(error);
             }
@@ -50,7 +52,7 @@ export function createStockLog(db, data) {
             }
 
             // Get last inserted data to return
-            let insertedData = await findById(db, result.insertId);
+            let insertedData = await getStockLogById(db, result.insertId);
             if (insertedData.length !== 0) {
                 resolve(insertedData);
             }
