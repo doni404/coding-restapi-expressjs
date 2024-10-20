@@ -94,10 +94,9 @@ export async function createProduct(req, res) {
                         stock_current: result.stock,
                         note: 'Initial stock',
                         change_reason: 'initial_stock',
+                        admin_created_id: req.user.id,
                         created_at: new Date(),
                     }
-
-                    stockLogData = helperModel.getUserRoleCreate(req.user, stockLogData);
 
                     await modelStockLog.createStockLog(connection, stockLogData);
 
@@ -262,8 +261,11 @@ export async function deleteProduct(req, res) {
                 }
 
                 try {
+                    let stockToReduce = checkProduct[0].stock;
+
                     let data = {
                         id,
+                        stock: 0,
                         situation: 'inactive',
                         deleted_at: new Date(),
                     }
@@ -277,14 +279,13 @@ export async function deleteProduct(req, res) {
                     // Decrease the stock log
                     let stockLogData = {
                         product_id: result.id,
-                        stock_change: -result.stock,
+                        stock_change: -stockToReduce,
                         stock_current: 0,
                         note: 'Product deleted and stock decreased',
                         change_reason: 'product_deleted',
+                        admin_created_id: req.user.id,
                         created_at: new Date(),
                     }
-
-                    stockLogData = helperModel.getUserRoleCreate(req.user, stockLogData);
 
                     await modelStockLog.createStockLog(connection, stockLogData);
 
