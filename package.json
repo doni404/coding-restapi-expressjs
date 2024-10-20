@@ -41,6 +41,7 @@
     "mysql": "^2.18.1",
     "nodemailer": "^6.9.4",
     "nodemon": "^3.0.1",
+    "sharp": "^0.33.5",
     "useragent": "^2.3.0"
   },
   "devDependencies": {

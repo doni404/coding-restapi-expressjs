@@ -1,81 +1,38 @@
-import * as model from '../models/product.js';
 import db from '../configs/dbClient.js';
 import dotenv from 'dotenv';
+import * as model from '../models/product.js';
+import * as modelStockLog from '../models/product_stock_log.js';
+import * as helperFile from '../utils/helper_file.js';
+import * as helperModel from '../utils/helper_model.js';
+import * as helperString from '../utils/helper_string.js';
+import { imageOptionParams } from '../constants/index.js'
 import { response, responseWithoutData } from '../utils/helper_response.js';
-import { getPaginationParams } from '../utils/helper_query.js';
-import * as fileHelper from '../utils/helper_file.js';
 
 // Load environment variables from .env
 dotenv.config({ path: './.env' });
 
-const UPLOAD_DIR = './uploads/products/';
+const UPLOAD_PATH = `${process.env.UPLOAD_PATH}/products`;
 
-export async function createProduct(req, res) {
-    const { code, name, price, type } = req.body;
-
-    if (!code || !name || !price || !type) {
-        return res.status(400).send(responseWithoutData('error', 'Invalid request body'));
-    }
-
-    try {
-        // Upload the photo if the image attached
-        if (req.body.photo) {
-            let imagePath = await fileHelper.saveBase64ImageToPath(req.body.photo, UPLOAD_DIR);
-            req.body.photo = imagePath;
-        }
-
-        // Get the admin id who create this from token extraction
-        let adminWhoCreate = req.decoded.id;
-
-        let data = {
-            ...req.body,
-            admin_created_id: adminWhoCreate,
-            created_at: new Date(),
-            admin_updated_id: adminWhoCreate,
-            updated_at: new Date()
-        }
-
-        let createdData = await model.createProduct(db, data);
-
-        return res.status(201).send(response('success', 'Product successfully created!', createdData[0]));
-    } catch (error) {
-        return res.status(500).send(responseWithoutData('error', 'something error'));
-    }
-}
-
-export async function getProducts(req, res) {
-    // Parse pagination params using the helper function
-    const { limit, offset, sort } = getPaginationParams(req.query);
-
+export async function getAllProducts(req, res) {
     try {
         // Get all products
-        let products = await model.findAll(db, { limit, offset, sort });
+        let products = await model.getAllProducts(db, req.query);
 
-        let totalProducts = (await model.findTotalCount(db))[0].total;
-
-        let data = {
-            items: products,
-            pagination: {
-                totalItems: totalProducts,
-                currentPage: Math.floor(offset / limit) + 1,
-                itemsPerPage: limit,
-                totalPages: Math.ceil(totalProducts / limit)
-            }
-        }
-
-        return res.status(200).send(response('success', 'Successfully get all products', data));
+        return res.status(200).send(response('success', 'Successfully get all products', products));
     } catch (error) {
+        console.log("🚀 ~ getAllProducts ~ error:", error);
         return res.status(500).send(responseWithoutData('error', 'something error'));
     }
 }
 
-export async function getProduct(req, res) {
-    const id = req.params.productId;
+export async function getProductById(req, res) {
+    let { params } = req;
 
     try {
-        // Get the product by Id
-        let product = await model.findById(db, id);
+        let id = params.id;
 
+        // Get the product by Id
+        let product = await model.getProductById(db, id);
         if (product.length === 0) {
             return res.status(404).send(responseWithoutData('error', 'Product not found!'));
         }
@@ -86,100 +43,346 @@ export async function getProduct(req, res) {
     }
 }
 
-export async function updateProduct(req, res) {
-    const id = req.params.productId;
-
-    if (Object.keys(req.body).length === 0) {
-        return res.status(400).send(responseWithoutData('error', 'Invalid request body'));
-    }
+export async function createProduct(req, res) {
+    let { body } = req;
 
     try {
-        // Check the product exist or not
-        let checkProduct = await model.findById(db, id);
+        let productData = body;
 
+        // Check the body, contains 'code', 'name', 'description', 'price'
+        if (!helperString.containsRequiredKeys(productData, ['code', 'name', 'description', 'price'])) {
+            return res.status(400).send(responseWithoutData('error', 'Bad Request: code, name, description and price are required'));
+        }
+
+        // Start the transaction
+        db.getConnection(function (error, connection) {
+            if (error) { // Failed to get connection from pool
+                console.log("🚀 ~ connectionError:", error);
+                return res.status(500).send(responseWithoutData('error', 'something error'));
+            }
+
+            // 1. Failed to start the transaction, release connection
+            connection.beginTransaction(async function (error) { // open transaction
+                if (error) {
+                    console.log("🚀 ~ beginTransactionError:", error);
+                    connection.release(); // Release connection if transaction cannot be started
+                    return res.status(500).send(responseWithoutData('error', 'something error'));
+                }
+
+                try {
+                    let data = {
+                        ...productData,
+                        created_at: new Date(),
+                        updated_at: new Date()
+                    }
+
+                    data = helperModel.getUserRoleCreate(req.user, data);
+
+                    // Check the product has photo or not and upload it
+                    if (data.photo) {
+                        data.photo = await helperFile.uploadImage(UPLOAD_PATH, data.photo, imageOptionParams);
+                    }
+
+                    // Create prodcut
+                    let result = await model.createProduct(connection, data);
+                    result = result[0];
+
+                    // Insert the product stock log
+                    let stockLogData = {
+                        product_id: result.id,
+                        stock_change: result.stock,
+                        stock_current: result.stock,
+                        note: 'Initial stock',
+                        change_reason: 'initial_stock',
+                        admin_created_id: req.user.id,
+                        created_at: new Date(),
+                    }
+
+                    await modelStockLog.createStockLog(connection, stockLogData);
+
+                    // 2. If commit is successful, release connection
+                    connection.commit(function (error) {
+                        if (error) {
+                            console.log("🚀 ~ commitError:", error);
+                            return connection.rollback(function () {
+                                connection.release(); // Release after rollback due to commit failure
+                                return res.status(500).send(responseWithoutData('error', 'someting error'));
+                            });
+                        }
+
+                        connection.release(); // Release connection after successful commit
+                        return res.status(201).send(response('success', 'Product successfully created!', result));
+                    });
+
+                } catch (error) {
+                    console.log("🚀 ~ rollbackError:", error);
+
+                    // Rollback the transaction if error by deleting the uploaded image
+                    if (data.photo) {
+                        await helperFile.deleteFile(UPLOAD_PATH, data.photo);
+                    }
+
+                    connection.rollback(function () {
+                        connection.release(); // Release after rollback due to transaction error
+                        return res.status(500).send(responseWithoutData('error', 'something error'));
+                    });
+                }
+            });
+        });
+    } catch (error) {
+        console.log("🚀 ~ createProduct ~ error:", error);
+        return res.status(500).send(responseWithoutData('error', 'something error'));
+    }
+}
+
+export async function updateProduct(req, res) {
+    let { body, params } = req;
+
+    try {
+        let productData = body;
+        let id = params.id;
+
+        // Check the body, contains 'code', 'name', 'description', 'price'
+        if (!helperString.containsRequiredKeys(productData, ['code', 'name', 'description', 'price'])) {
+            return res.status(400).send(responseWithoutData('error', 'Bad Request: code, name, description and price are required'));
+        }
+
+        // Exclude the stock to avoid update it directly, show error if want to update stock
+        if (productData.stock) {
+            return res.status(400).send(responseWithoutData('error', 'Bad Request: Stock cannot be updated directly!'));
+        }
+
+        // Check the product exist or not
+        let checkProduct = await model.getProductById(db, id);
         if (checkProduct.length === 0) {
             return res.status(404).send(responseWithoutData('error', 'Product not found!'));
         }
 
-        checkProduct = checkProduct[0];
-
-        // Check image need to update
-        if (req.body.photo) {
-            // If there's an existing photo, delete it
-            if (checkProduct.photo) {
-                await fileHelper.deleteImage(checkProduct.photo, UPLOAD_DIR);
+        // Start the transaction
+        db.getConnection(function (error, connection) {
+            if (error) { // Failed to get connection from pool
+                console.log("🚀 ~ connectionError:", error);
+                return res.status(500).send(responseWithoutData('error', 'something error'));
             }
 
-            // Upload the new photo
-            let newImagePath = await fileHelper.saveBase64ImageToPath(req.body.photo, UPLOAD_DIR);
-            req.body.photo = newImagePath;
-        }
+            // 1. Failed to start the transaction, release connection
+            connection.beginTransaction(async function (error) { // open transaction
+                if (error) {
+                    console.log("🚀 ~ beginTransactionError:", error);
+                    connection.release(); // Release connection if transaction cannot be started
+                    return res.status(500).send(responseWithoutData('error', 'something error'));
+                }
 
-        // Get the admin id who update this from token extraction
-        let adminWhoUpdate = req.decoded.id;
+                try {
+                    let data = {
+                        id,
+                        ...productData,
+                        updated_at: new Date()
+                    }
 
-        let data = {
-            id,
-            ...req.body,
-            admin_updated_id: adminWhoUpdate,
-            updated_at: new Date(),
-        }
+                    data = helperModel.getUserRoleUpdate(req.user, data);
 
-        let updatedProduct = await model.updateProduct(db, data);
-        return res.status(200).send(response('sucess', 'Product successfully updated !', updatedProduct[0]));
+                    // Check the product has photo or not and upload it
+                    if (data.photo) {
+                        data.photo = await helperFile.uploadImage(UPLOAD_PATH, data.photo, imageOptionParams);
+                    }
+
+                    // Update prodcut
+                    let result = await model.updateProduct(connection, data);
+                    result = result[0];
+
+                    console.log("🚀 ~ updateProduct ~ result", result);
+
+                    // 2. If commit is successful, release connection
+                    connection.commit(async function (error) {
+                        if (error) {
+                            console.log("🚀 ~ commitError:", error);
+                            return connection.rollback(function () {
+                                connection.release(); // Release after rollback due to commit failure
+                                return res.status(500).send(responseWithoutData('error', 'someting error'));
+                            });
+                        }
+
+                        // Delete the old photo if there's a new photo
+                        if (data.photo && checkProduct[0].photo) {
+                            await helperFile.deleteFile(UPLOAD_PATH, checkProduct[0].photo);
+                        }
+
+                        connection.release(); // Release connection after successful commit
+                        return res.status(200).send(response('success', 'Product successfully updated!', result));
+                    });
+
+                } catch (error) {
+                    console.log("🚀 ~ rollbackError:", error);
+
+                    // Rollback the transaction if error by deleting the uploaded image
+                    if (data.photo) {
+                        await helperFile.deleteFile(UPLOAD_PATH, data.photo);
+                    }
+
+                    connection.rollback(function () {
+                        connection.release(); // Release after rollback due to transaction error
+                        return res.status(500).send(responseWithoutData('error', 'something error'));
+                    });
+                }
+            });
+        });
     } catch (error) {
+        console.log("🚀 ~ updateProduct ~ error:", error);
         return res.status(500).send(responseWithoutData('error', 'something error'));
     }
 }
 
 export async function deleteProduct(req, res) {
-    const id = req.params.productId;
+    let { params } = req;
 
     try {
-        // Check the product exist or not
-        let checkProduct = await model.findById(db, id);
+        let id = params.id;
 
+        // Check the product exist or not
+        let checkProduct = await model.getProductById(db, id);
         if (checkProduct.length === 0) {
             return res.status(404).send(responseWithoutData('error', 'Product not found!'));
         }
 
-        // Get the admin id who delete this from token extraction
-        let adminWhoDelete = req.decoded.id;
+        // Start the transaction
+        db.getConnection(function (error, connection) {
+            if (error) { // Failed to get connection from pool
+                console.log("🚀 ~ connectionError:", error);
+                return res.status(500).send(responseWithoutData('error', 'something error'));
+            }
 
-        let data = {
-            id,
-            situation: 'inactive',
-            admin_deleted_id: adminWhoDelete,
-            deleted_at: new Date(),
-        }
+            // 1. Failed to start the transaction, release connection
+            connection.beginTransaction(async function (error) { // open transaction
+                if (error) {
+                    console.log("🚀 ~ beginTransactionError:", error);
+                    connection.release(); // Release connection if transaction cannot be started
+                    return res.status(500).send(responseWithoutData('error', 'something error'));
+                }
 
-        let deletedProduct = await model.deleteProduct(db, data);
-        return res.status(200).send(response('sucess', 'Product successfully deleted !', deletedProduct[0]));
+                try {
+                    let stockToReduce = checkProduct[0].stock;
+
+                    let data = {
+                        id,
+                        stock: 0,
+                        situation: 'inactive',
+                        deleted_at: new Date(),
+                    }
+
+                    data = helperModel.getUserRoleDelete(req.user, data);
+
+                    // Delete the product
+                    let result = await model.deleteProduct(connection, data);
+                    result = result[0];
+
+                    // Decrease the stock log
+                    let stockLogData = {
+                        product_id: result.id,
+                        stock_change: -stockToReduce,
+                        stock_current: 0,
+                        note: 'Product deleted and stock decreased',
+                        change_reason: 'product_deleted',
+                        admin_created_id: req.user.id,
+                        created_at: new Date(),
+                    }
+
+                    await modelStockLog.createStockLog(connection, stockLogData);
+
+                    // 2. If commit is successful, release connection
+                    connection.commit(async function (error) {
+                        if (error) {
+                            console.log("🚀 ~ commitError:", error);
+                            return connection.rollback(function () {
+                                connection.release(); // Release after rollback due to commit failure
+                                return res.status(500).send(responseWithoutData('error', 'someting error'));
+                            });
+                        }
+
+                        connection.release(); // Release connection after successful commit
+                        return res.status(200).send(response('success', 'Product successfully deleted!', result));
+                    });
+
+                } catch (error) {
+                    console.log("🚀 ~ rollbackError:", error);
+
+                    // Rollback the transaction if error 
+                    connection.rollback(function () {
+                        connection.release(); // Release after rollback due to transaction error
+                        return res.status(500).send(responseWithoutData('error', 'something error'));
+                    });
+                }
+            });
+        });
     } catch (error) {
+        console.log("🚀 ~ deleteProduct ~ error:", error);
         return res.status(500).send(responseWithoutData('error', 'something error'));
     }
 }
 
 export async function deleteProductPermanent(req, res) {
-    const id = req.params.productId;
+    let { params } = req;
 
     try {
-        let checkProduct = await model.findDeletedById(db, id);
+        let id = params.id;
 
-        if (checkProduct.length === 0) {
+        // Check the product can be deleted permanently or not
+        let deletedProduct = await model.getProductDeleted(db, id);
+        if (deletedProduct.length === 0) {
             return res.status(404).send(responseWithoutData('error', 'Product can\'t be deleted permanently!'));
         }
 
-        checkProduct = checkProduct[0];
+        deletedProduct = deletedProduct[0];
 
-        // If there's an existing photo, delete it
-        if (checkProduct.photo) {
-            await fileHelper.deleteImage(checkProduct.photo, UPLOAD_DIR);
-        }
+        // Start the transaction
+        db.getConnection(function (error, connection) {
+            if (error) { // Failed to get connection from pool
+                console.log("🚀 ~ connectionError:", error);
+                return res.status(500).send(responseWithoutData('error', 'something error'));
+            }
 
-        await model.deleteProductPermanent(db, id);
-        return res.status(200).send(responseWithoutData('success', 'Product deleted permanently!'));
+            // 1. Failed to start the transaction, release connection
+            connection.beginTransaction(async function (error) { // open transaction
+                if (error) {
+                    console.log("🚀 ~ beginTransactionError:", error);
+                    connection.release(); // Release connection if transaction cannot be started
+                    return res.status(500).send(responseWithoutData('error', 'something error'));
+                }
+
+                try {
+                    // Delete the product permanently
+                    await model.deleteProductPermanent(connection, id);
+
+                    connection.commit(async function (error) {
+                        if (error) {
+                            console.log("🚀 ~ commitError:", error);
+                            return connection.rollback(function () {
+                                connection.release(); // Release after rollback due to commit failure
+                                return res.status(500).send(responseWithoutData('error', 'someting error'));
+                            });
+                        }
+
+                        // Delete the photo if exist
+                        if (deletedProduct.photo) {
+                            await helperFile.deleteFile(UPLOAD_PATH, deletedProduct.photo);
+                        }
+
+                        connection.release(); // Release connection after successful commit
+                        return res.status(200).send(responseWithoutData('success', 'Product deleted permanently!'));
+                    });
+
+                } catch (error) {
+                    console.log("🚀 ~ rollbackError:", error);
+                    connection.rollback(function () {
+                        connection.release(); // Release after rollback due to transaction error
+                        return res.status(500).send(responseWithoutData('error', 'something error'));
+                    });
+                }
+
+            });
+        });
     } catch (error) {
+        console.log("🚀 ~ deleteProductPermanent ~ error:", error);
         return res.status(500).send(responseWithoutData('error', 'something error'));
     }
 }
