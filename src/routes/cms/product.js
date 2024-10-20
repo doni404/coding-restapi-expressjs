@@ -1,14 +1,15 @@
 import express from 'express';
 import * as controller from '../../controllers/product.js';
 import { authenticateTokenAdmin } from '../../middlewares/appAuth.js';
+import { checkBody } from '../../middlewares/bodyChecker.js';
 
 const router = express.Router();
 
-router.post('/', authenticateTokenAdmin, controller.createProduct);
-router.get('/', authenticateTokenAdmin, controller.getProducts);
-router.get('/:productId', authenticateTokenAdmin, controller.getProduct);
-router.put('/:productId', authenticateTokenAdmin, controller.updateProduct);
-router.delete('/:productId', authenticateTokenAdmin, controller.deleteProduct);
-router.delete('/:productId/permanent', authenticateTokenAdmin, controller.deleteProductPermanent);
+router.get('/', authenticateTokenAdmin, controller.getAllProducts);
+router.get('/:id', authenticateTokenAdmin, controller.getProductById);
+router.post('/', authenticateTokenAdmin, checkBody, controller.createProduct);
+router.put('/:id', authenticateTokenAdmin, checkBody, controller.updateProduct);
+router.delete('/:id', authenticateTokenAdmin, controller.deleteProduct);
+router.delete('/:id/permanent', authenticateTokenAdmin, controller.deleteProductPermanent);
 
 export default router;

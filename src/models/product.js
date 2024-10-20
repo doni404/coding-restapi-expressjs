@@ -1,6 +1,34 @@
-export function findAll(db, params) {
+import { queryParamGenerator } from '../utils/helper_model.js';
+
+export function getAllProducts(db, queryParams) {
+    let queryClause = ``
+
+    // Process condition query based on queryParams
+    if (Object.keys(queryParams).length > 0) {
+        for (let [key, value] of Object.entries(queryParams)) {
+            let exclude = ['sort_by', 'limit', 'offset']
+            if (key === 'keyword') {
+                queryClause += queryClause.length > 0 ? " AND " : ""
+                queryClause += ` (LOWER(code) LIKE LOWER('%${value}%') OR LOWER(name) LIKE LOWER('%${value}%') OR LOWER(description) LIKE LOWER('%${value}%'))`
+            } else if (!exclude.includes(key)) {
+                if (isInteger(value)) {
+                    queryClause += queryClause.length > 0 ? " AND " : ""
+                    queryClause += ` ${key} = ${value}`
+                } else {
+                    queryClause += queryClause.length > 0 ? " AND " : ""
+                    queryClause += ` ${key} = '${value}'`
+                }
+            }
+        }
+    }
+
+    // Append query clause to query
+    if (queryClause.length > 0) {
+        queryClause = ` AND ${queryClause}`
+    }
+
     return new Promise((resolve, reject) => {
-        db.query("SELECT * FROM products WHERE deleted_at IS NULL ORDER BY ? LIMIT ? OFFSET ?", [params.sort.field + " " + params.sort.direction, params.limit, params.offset], function(error, results, fields) {
+        db.query(`SELECT * FROM products WHERE deleted_at IS NULL ${queryClause}` + queryParamGenerator(queryParams), function(error, results, fields) {
             if(error) {
                 reject(error);
             }
@@ -9,7 +37,7 @@ export function findAll(db, params) {
     });
 }
 
-export function findTotalCount(db) {
+export function getTotalCount(db) {
     return new Promise((resolve, reject) => {
         db.query("SELECT count(id) as total FROM products WHERE deleted_at IS NULL", function(error, results, fields) {
             if (error) {
@@ -20,7 +48,7 @@ export function findTotalCount(db) {
     });
 }
 
-export function findById(db, id) {
+export function getProductById(db, id) {
     return new Promise((resolve, reject) => {
         db.query("SELECT * FROM products WHERE id = ? AND deleted_at IS NULL", [id], function (error, results, fields) {
             if (error) {
@@ -31,7 +59,7 @@ export function findById(db, id) {
     });
 }
 
-export function findByCode(db, code) {
+export function getProductByCode(db, code) {
     return new Promise((resolve, reject) => {
         db.query("SELECT * FROM products WHERE code = ? AND deleted_at IS NULL", [code], function (error, results, fields) {
             if (error) {
@@ -42,7 +70,7 @@ export function findByCode(db, code) {
     });
 }
 
-export function findDeletedById(db, id) {
+export function getProductDeleted(db, id) {
     return new Promise((resolve, reject) => {
         db.query("SELECT * FROM products WHERE id = ? AND deleted_at IS NOT NULL", [id], function (error, results, fields) {
             if (error) {
@@ -61,7 +89,7 @@ export function createProduct(db, data) {
             }
 
             // Get last inserted data to return
-            let insertedData = await findById(db, result.insertId);
+            let insertedData = await getProductById(db, result.insertId);
             if (insertedData.length !== 0) {
                 resolve(insertedData);
             }
@@ -79,7 +107,7 @@ export function updateProduct(db, data) {
             }
 
             // Get last updated data to return
-            let updatedData = await findById(db, data.id);
+            let updatedData = await getProductById(db, data.id);
             if (updatedData.length !== 0) {
                 resolve(updatedData);
             }
@@ -97,7 +125,7 @@ export function deleteProduct(db, data) {
             }
 
             // Get last deleted data to return
-            let deletedData = await findDeletedById(db, data.id);
+            let deletedData = await getProductDeleted(db, data.id);
             if (deletedData.length !== 0) {
                 resolve(deletedData);
             }
