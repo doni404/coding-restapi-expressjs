@@ -8,7 +8,7 @@ import adminPermissionCms from './routes/cms/admin_permission.js'
 import adminRoleCms from './routes/cms/admin_role.js'
 
 import productCms from './routes/cms/product.js';
-import productStockLogCMS from './routes/cms/product_stock_log.js';
+import productStockLogCms from './routes/cms/product_stock_log.js';
 
 import customerCMS from './routes/cms/customer.js';
 import customerLoginLogCMS from './routes/cms/customer_login_log.js';
@@ -45,7 +45,7 @@ app.use('/v1/cms/admin-login-logs', adminLoginLogCms);
 app.use('/v1/cms/admin-permissions', adminPermissionCms);
 app.use('/v1/cms/admin-roles', adminRoleCms);
 app.use('/v1/cms/products', productCms);
-// app.use('/v1/cms/product-stock-logs', productStockLogCMS);
+app.use('/v1/cms/product-stock-logs', productStockLogCms);
 // app.use('/v1/cms/suppliers', supplierCMS);
 // app.use('/v1/cms/supplier-orders', supplierOrderCMS);
 // app.use('/v1/cms/customers', customerCMS);

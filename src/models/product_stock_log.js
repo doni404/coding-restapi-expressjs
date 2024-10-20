@@ -1,4 +1,4 @@
-export function findAll(db, params) {
+export function getAllStockLogs(db, params) {
     return new Promise((resolve, reject) => {
         db.query("SELECT * FROM product_stock_logs ORDER BY ? LIMIT ? OFFSET ?", [params.sort.filed + " " + params.sort.direction, params.limit, params.offset], function(error, results, fields) {
             if (error) {
@@ -20,7 +20,7 @@ export function findTotalCount(db) {
     });
 }
 
-export function findById(db, id) {
+export function getStockLogById(db, id) {
     return new Promise((resolve, reject) => {
         db.query("SELECT * FROM product_stock_logs WHERE id = ?", [id], function(error, results, fields) {
             if (error) {
@@ -31,7 +31,7 @@ export function findById(db, id) {
     });
 }
 
-export function findByProductId(db, productId) {
+export function getStockLogsByProductId(db, productId) {
     return new Promise((resolve, reject) => {
         db.query("SELECT * FROM product_stock_logs WHERE product_id = ?", [productId], function(error, results, fields) {
             if (error) {
@@ -42,7 +42,7 @@ export function findByProductId(db, productId) {
     });
 }
 
-export function createLog(db, data) {
+export function createStockLog(db, data) {
     return new Promise((resolve, reject) => {
         db.query("INSERT INTO product_stock_logs SET ?", [data], async function (error, result, fields) {
             if (error) {
@@ -59,7 +59,7 @@ export function createLog(db, data) {
     });
 }
 
-export function deleteLogPermanent(db, id) {
+export function deleteStockLogPermanent(db, id) {
     return new Promise((resolve, reject) => {
         db.query("DELETE FROM product_stock_logs WHERE id = ?", [id], function (error, results, fields) {
             if (error) {

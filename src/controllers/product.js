@@ -1,6 +1,7 @@
 import db from '../configs/dbClient.js';
 import dotenv from 'dotenv';
 import * as model from '../models/product.js';
+import * as modelStockLog from '../models/product_stock_log.js';
 import * as helperFile from '../utils/helper_file.js';
 import * as helperModel from '../utils/helper_model.js';
 import * as helperString from '../utils/helper_string.js';
@@ -86,6 +87,20 @@ export async function createProduct(req, res) {
                     let result = await model.createProduct(connection, data);
                     result = result[0];
 
+                    // Insert the product stock log
+                    let stockLogData = {
+                        product_id: result.id,
+                        stock_change: result.stock,
+                        stock_current: result.stock,
+                        note: 'Initial stock',
+                        change_reason: 'initial_stock',
+                        created_at: new Date(),
+                    }
+
+                    stockLogData = helperModel.getUserRoleCreate(req.user, stockLogData);
+
+                    await modelStockLog.createStockLog(connection, stockLogData);
+
                     // 2. If commit is successful, release connection
                     connection.commit(function (error) {
                         if (error) {
@@ -131,6 +146,11 @@ export async function updateProduct(req, res) {
         // Check the body, contains 'code', 'name', 'description', 'price'
         if (!helperString.containsRequiredKeys(productData, ['code', 'name', 'description', 'price'])) {
             return res.status(400).send(responseWithoutData('error', 'Bad Request: code, name, description and price are required'));
+        }
+
+        // Exclude the stock to avoid update it directly, show error if want to update stock
+        if (productData.stock) {
+            return res.status(400).send(responseWithoutData('error', 'Bad Request: Stock cannot be updated directly!'));
         }
 
         // Check the product exist or not
@@ -226,19 +246,75 @@ export async function deleteProduct(req, res) {
             return res.status(404).send(responseWithoutData('error', 'Product not found!'));
         }
 
-        let data = {
-            id,
-            situation: 'inactive',
-            deleted_at: new Date(),
-        }
+        // Start the transaction
+        db.getConnection(function (error, connection) {
+            if (error) { // Failed to get connection from pool
+                console.log("🚀 ~ connectionError:", error);
+                return res.status(500).send(responseWithoutData('error', 'something error'));
+            }
 
-        data = helperModel.getUserRoleDelete(req.user, data);
+            // 1. Failed to start the transaction, release connection
+            connection.beginTransaction(async function (error) { // open transaction
+                if (error) {
+                    console.log("🚀 ~ beginTransactionError:", error);
+                    connection.release(); // Release connection if transaction cannot be started
+                    return res.status(500).send(responseWithoutData('error', 'something error'));
+                }
 
-        let result = await model.deleteProduct(db, data);
-        result = result[0];
+                try {
+                    let data = {
+                        id,
+                        situation: 'inactive',
+                        deleted_at: new Date(),
+                    }
 
-        return res.status(200).send(response('sucess', 'Product successfully deleted !', result));
+                    data = helperModel.getUserRoleDelete(req.user, data);
+
+                    // Delete the product
+                    let result = await model.deleteProduct(connection, data);
+                    result = result[0];
+
+                    // Decrease the stock log
+                    let stockLogData = {
+                        product_id: result.id,
+                        stock_change: -result.stock,
+                        stock_current: 0,
+                        note: 'Product deleted and stock decreased',
+                        change_reason: 'product_deleted',
+                        created_at: new Date(),
+                    }
+
+                    stockLogData = helperModel.getUserRoleCreate(req.user, stockLogData);
+
+                    await modelStockLog.createStockLog(connection, stockLogData);
+
+                    // 2. If commit is successful, release connection
+                    connection.commit(async function (error) {
+                        if (error) {
+                            console.log("🚀 ~ commitError:", error);
+                            return connection.rollback(function () {
+                                connection.release(); // Release after rollback due to commit failure
+                                return res.status(500).send(responseWithoutData('error', 'someting error'));
+                            });
+                        }
+
+                        connection.release(); // Release connection after successful commit
+                        return res.status(200).send(response('success', 'Product successfully deleted!', result));
+                    });
+
+                } catch (error) {
+                    console.log("🚀 ~ rollbackError:", error);
+
+                    // Rollback the transaction if error 
+                    connection.rollback(function () {
+                        connection.release(); // Release after rollback due to transaction error
+                        return res.status(500).send(responseWithoutData('error', 'something error'));
+                    });
+                }
+            });
+        });
     } catch (error) {
+        console.log("🚀 ~ deleteProduct ~ error:", error);
         return res.status(500).send(responseWithoutData('error', 'something error'));
     }
 }
